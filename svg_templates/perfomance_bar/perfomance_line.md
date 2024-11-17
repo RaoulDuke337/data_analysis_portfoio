@@ -11,7 +11,7 @@
 
 Затем необходимо скопировать svg-код наших фигур, выделив нужные слои:
 
-[figmasvg](./pics/figmasvg.png)
+[figmasvg](https://github.com/RaoulDuke337/data_analysis_portfoio/blob/1446e2e11d47b666700fdfc02e647b4d5f028158/svg_templates/perfomance_bar/pics/figmasvg.png)
 
 ## Анализ SVG и создание меры 
 
