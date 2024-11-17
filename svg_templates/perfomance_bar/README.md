@@ -62,6 +62,6 @@ RETURN
 
 После создания меры, если всё было сделано верно, необхоидмо вытащить меру в одну из ячеек матрицы / таблицы и всё должно работать.
 
-[result](./pics/result.png)
+[result](https://raw.githubusercontent.com/RaoulDuke337/data_analysis_portfoio/main/svg_templates/perfomance_bar/pics/result.png)
 
 Для тестирования при изменении svg-кода, можно пользоваться сайтами с онлайн-рендерингом вводимого кода, например: [editsvgcode.com](https://editsvgcode.com/)
