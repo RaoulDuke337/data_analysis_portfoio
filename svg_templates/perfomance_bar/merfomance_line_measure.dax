@@ -1,0 +1,25 @@
+RS Total Sales Perfomance SVG = 
+VAR Perfomace = ROUND([Quota Perfomance, %] * 100, 0)
+VAR _LimitedPerfomance = MIN(Perfomace, 140)
+VAR _SvgWidth = 150
+VAR _SvgHeight = 30
+VAR _MainAxisDefault = 100
+VAR _MainAxisMax = 140
+VAR _PerfomanceAxisWidth = MIN(Perfomace, 100)
+VAR _PerfomanceCircleWidth = _LimitedPerfomance
+VAR _MainAxisWidth = IF(Perfomace > 100, _LimitedPerfomance, _MainAxisDefault)
+VAR _MainAxisColor = IF(Perfomace > 100, "#74B2A2", "#B7BCC1")
+
+VAR _SvgPrefix = "data:image/svg+xml;utf8, " 
+VAR _SvgSuffix = "</svg>"
+
+VAR _Background = "<svg width=""" & _SvgWidth & """ height=""" & _SvgHeight & """ viewBox=""0 0 150 30"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">"
+VAR _Main_Axis = "<line x1=""10"" y1=""15"" x2=""" & _MainAxisWidth & """ y2=""15"" stroke=""" & _MainAxisColor & """ stroke-width=""2""/>"
+VAR _Perfomance_Axis =  "<line x1=""10"" y1=""15"" x2=""" & _PerfomanceAxisWidth & """ y2=""15"" stroke=""#5D8EBB"" stroke-width=""2""/>"
+VAR _ZeroCircle = "<circle cx=""10"" cy=""15"" r=""6"" fill=""#CB6E70""/>"
+VAR _TargetCircle = "<circle cx=""" & _MainAxisDefault & """ cy=""15"" r=""6"" fill=""#74B2A2""/>"
+VAR _PerfomanceCircle = "<circle cx=""" & _PerfomanceCircleWidth & """ cy=""15"" r=""6"" fill=""#6BA9C2"" stroke=""#5D8EBB"" stroke-width=""1.5""/>"
+
+VAR _Svg = _SvgPrefix & _Background & _Main_Axis & _Perfomance_Axis & _ZeroCircle & _TargetCircle & _PerfomanceCircle & _SvgSuffix
+RETURN
+    IF( NOT ISBLANK([Reseller TS by Emp]), _Svg, BLANK())
