@@ -167,7 +167,7 @@ Overview Barchart = {
 
 Большинство из них были взяты с [`kerrykolosko.com`](https://kerrykolosko.com/portfolio-category/svg-templates/) и были адаптированы под мой отчет. 
 
-Но один из svg-элементов был создан с нуля, с помощью Figma, и внедрен в отчет. Подробнее об этом, я написал [`здесь`](/bi_development/svg_templates/perfomance_bar/readme.md)
+Но один из svg-элементов был создан с нуля, с помощью Figma, и внедрен в отчет. Подробнее об этом, я написал [`здесь`](/bi_development/svg_templates/perfomance_bar/README.md)
 
 ## Дизайн и визуальные решения
 

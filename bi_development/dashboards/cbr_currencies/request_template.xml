@@ -1,0 +1,9 @@
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <m:{{ data.get('method_name') }} xmlns:m="http://web.cbr.ru/">
+            {% for key, value in data.get('params').items() %}
+                <m:{{ key }}>{{ value }}</m:{{ key }}>
+            {% endfor %}
+        </m:{{ data.get('method_name') }}>
+    </soap:Body>
+</soap:Envelope>
