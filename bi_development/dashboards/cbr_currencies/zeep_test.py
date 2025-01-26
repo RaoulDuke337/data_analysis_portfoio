@@ -37,3 +37,4 @@ for method_name, parameters, soap_action in zip(methods, parameters, soap_action
 
 with open("./EnumValutesXML.xml", "w") as f:
     f.write(etree.tostring(response, pretty_print=True, encoding='unicode'))
+
