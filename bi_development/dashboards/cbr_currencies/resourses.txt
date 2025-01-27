@@ -1,0 +1,1 @@
+https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL;http://web.cbr.ru/GetCursDynamicXML;GetCursDynamicXML

@@ -16,7 +16,7 @@ class CustomHeaderPlugin(Plugin):
         return envelope, http_headers
 
 class Cbr():
-    def __init__(self, list_column_name, link_folder, link_file, days_before, separator = ';', extension = '.csv'):
+    def __init__(self, list_column_name, link_folder, link_file, days_before, soap_action, wsdl, method, params, separator = ';', extension = '.csv'):
         self.list_column_name = list_column_name
         self.link_address = link_folder + link_file + '.txt'
         self.open_file = open(self.link_address, encoding='utf-8')
@@ -25,14 +25,14 @@ class Cbr():
         self.link_list = []
         self.separator = separator
         self.extension = extension
-        self.soap_action = '"http://web.cbr.ru/GetCursDynamicXML"'
-        self.wsdl = 'https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL'
-        self.method = 'GetCursDynamicXML'
+        self.soap_action = soap_action
+        self.wsdl = wsdl
+        self.method = method
         self.dates = ()
         self.currency = ''
         self.days_before = days_before
         self.df_indexes = pd.DataFrame(columns=self.list_column_name)
-        self.parametrs = {}
+        self.parametrs = params
 
     def read_line(self):
         self.readline = self.open_file.readline()
@@ -53,7 +53,8 @@ class Cbr():
         client = Client(wsdl=self.wsdl, plugins=[CustomHeaderPlugin(self.soap_action)])                
         response = getattr(client.service, self.method)(**self.parametrs)
         return response
-    
+
+class Currencies(Cbr):   
     def xml_parsing(self):
         response = self.get_request()
         data = []
@@ -85,6 +86,21 @@ class Cbr():
         df_indexes = df_indexes[['date', 'value', 'name', 'unit']]
         self.df_indexes = df_indexes
         self.df_indexes.to_csv(link_folder + 'proc_' + type_measures + '.csv', index = False, sep = ';')
+
+class EnumCurrencies(Cbr):
+    def parsing(self):
+        response = self.get_request()
+        data = []
+        for tag in response.findall('.//EnumValutes', namespaces={'': ''}):
+            row = {
+                'Vcode': tag.find('Vcode').text.strip(),
+                'Vname': tag.find('Vname').text.strip(),
+                'VEngname': tag.find('VEngname').text.strip(),
+                'Vnom': tag.find('Vnom').text.strip()
+            }
+            data.append(row)
+        df = pd.DataFrame(data)
+        df.to_csv(link_folder + type_measures + '.csv', index = False, sep = ';')
 
 class CbrZCYC(Cbr):
 # Метод parsing() для получения данных с cbr.ru использует SOAP-запрос к веб-сервису ЦБ (функция create_request() из модуля soap_requests)
@@ -120,49 +136,20 @@ class CbrZCYC(Cbr):
 
 
 
-link_folder = os.getcwd() + '\\'
-link_file = 'currencies_cbr'
-type_measures = 'cbr_currencies'
+link_folder = os.getcwd() + '/bi_development/dashboards/cbr_currencies/'
+link_file = 'resourses'
+# type_measures = 'cbr_currencies'
 list_column_name = ['date', 'name', 'value', 'unit']
-class_name = ''
 
-indexes = CbrCurrencies(list_column_name, link_folder, link_file, days_before=30)
-indexes.parsing_cycle()
-indexes.processing()
+# indexes = Cbr(list_column_name, link_folder, link_file, days_before=30)
+# indexes.parsing_cycle()
+# indexes.processing()
 
-# СОБИРАЕМ СПИСОК ФАЙЛОВ
-from os import walk
-mypath = link_folder
-f = []
-for (dirpath, dirnames, filenames) in walk(mypath):
-    f.extend(filenames)
-    break
+soap_action = 'http://web.cbr.ru/EnumValutesXML'
+wsdl = 'https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL'
+method = 'EnumValutesXML'
+params = {'Seld': 0}
+type_measures = 'enum'
+indexes = EnumCurrencies(list_column_name, link_folder, link_file, 3, soap_action, wsdl, method, params)
 
-
-# ЗАГРУЗКА В БД
-driver='Driver=SQL Server;'
-server = 'Server=whsqlp02;'
-db = 'Database=СлужбаРазвитияПродаж;'
-auth='Trusted_Connection=yes;'
-
-db = DB(driver, server, db, auth)
-
-
-with db.cnxn:
-    with db.cur:
-        for fn in f:
-            if fn[0:8] == 'proc_cbr':
-                print(fn)
-                table = pd.read_csv(fn, sep = ';')
-                table.rename(columns={table.columns[0]: 'dates', table.columns[1]: 'fact', table.columns[2]: 'name'}, inplace=True)
-                table['y'] = table['dates'].str[-4:]
-                table['m'] = table['dates'].str[3:5]
-                table['d'] = table['dates'].str[0:2]
-                table['date'] = table['y'] + table['m'] + table['d']
-                table['date'] = pd.to_datetime(table['date'], format='%Y%m%d')
-                table.unit = table.unit.fillna('')
-                
-                for idx, row in table.iterrows():
-                    db.insert(row['date'], row['fact'], row['name'], row['unit'])
-        db.del_duplicates()
-db.cnxn.close()
+indexes.parsing()
