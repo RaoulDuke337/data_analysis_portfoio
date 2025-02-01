@@ -4,6 +4,7 @@ import soap_requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from zeep import Client, Plugin
+from sqlalchemy import create_engine, text
     
 
 class CustomHeaderPlugin(Plugin):
@@ -33,6 +34,10 @@ class Cbr():
         self.days_before = days_before
         self.df_indexes = pd.DataFrame(columns=self.list_column_name)
         self.parametrs = params
+        self.username = 'python_writer'
+        self.password = 'python3'
+        self.dbname = 'currencies'
+        self.connection_string = f'postgresql+psycopg2://{self.username}:{self.password}@localhost/{self.dbname}'
 
     def read_line(self):
         self.readline = self.open_file.readline()
@@ -101,6 +106,24 @@ class EnumCurrencies(Cbr):
             data.append(row)
         df = pd.DataFrame(data)
         df.to_csv(link_folder + type_measures + '.csv', index = False, sep = ';')
+    
+    def db_process(self):
+        df = pd.read_csv('bi_development/dashboards/cbr_currencies/enum.csv', encoding='utf-8', sep=';')
+        engine = create_engine(self.connection_string)
+        with engine.begin() as connection:
+            data_to_insert = [
+                (row['Vcode'], row['Vname'], row['VEngname'], row['Vnom']) 
+                for _, row in df.iterrows()
+            ]
+            insert_stmt = text("INSERT INTO currencies (v_code, v_name, v_eng_name, v_nom) VALUES (:v_code, :v_name, :v_eng_name, :v_nom)")
+            connection.execute(text("TRUNCATE TABLE currencies;"))
+            for row in data_to_insert:
+                connection.execute(insert_stmt, {
+                    'v_code': row[0],
+                    'v_name': row[1],
+                    'v_eng_name': row[2],
+                    'v_nom': row[3]
+                })
 
 class CbrZCYC(Cbr):
 # Метод parsing() для получения данных с cbr.ru использует SOAP-запрос к веб-сервису ЦБ (функция create_request() из модуля soap_requests)
@@ -153,3 +176,6 @@ type_measures = 'enum'
 indexes = EnumCurrencies(list_column_name, link_folder, link_file, 3, soap_action, wsdl, method, params)
 
 indexes.parsing()
+indexes.db_process()
+
+
