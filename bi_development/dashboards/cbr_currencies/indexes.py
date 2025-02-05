@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from zeep import Client, Plugin
 from sqlalchemy import create_engine, text
+from decouple import config
     
 
 class CustomHeaderPlugin(Plugin):
@@ -24,6 +25,7 @@ class Cbr():
         self.readline = ''
         self.len_rl = 0
         self.link_list = []
+        self.df = pd.DataFrame()
         self.separator = separator
         self.extension = extension
         self.soap_action = soap_action
@@ -34,10 +36,10 @@ class Cbr():
         self.days_before = days_before
         self.df_indexes = pd.DataFrame(columns=self.list_column_name)
         self.parametrs = params
-        self.username = 'python_writer'
-        self.password = 'python3'
-        self.dbname = 'currencies'
-        self.connection_string = f'postgresql+psycopg2://{self.username}:{self.password}@localhost/{self.dbname}'
+        self.username = config('USERNAME')
+        self.password = config('PASSWORD')
+        self.db_name = config('DB_NAME')
+        self.connection_string = f'postgresql+psycopg2://{self.username}:{self.password}@localhost/{self.db_name}'
 
     def read_line(self):
         self.readline = self.open_file.readline()
@@ -73,16 +75,31 @@ class Currencies(Cbr):
         df = pd.DataFrame(data)
         return df
         
+    # def parsing_cycle(self):
+    #     act_df = self.df_indexes.copy()
+    #     self.read_line()
+    #     while self.len_rl > 0:
+    #         print(self.link_list[2])
+    #         self.currency = self.link_list[2]
+    #         act_df = act_df._append(self.xml_parsing())
+    #         self.df_indexes = act_df.copy()
+    #         self.read_line()
+    #     self.close_file()
+
     def parsing_cycle(self):
         act_df = self.df_indexes.copy()
-        self.read_line()
-        while self.len_rl > 0:
-            print(self.link_list[2])
-            self.currency = self.link_list[2]
+        enum_df = pd.read_csv(link_folder + 'enum' + '.csv', sep = ';')
+        for index, row in enum_df.iterrows():
+            self.currency = row['Vname']
+            print(self.currency)
+            self.get_request_date()
+            self.parametrs = {
+                'FromDate': self.dates[0],
+                'ToDate': self.dates[1],
+                'ValutaCode': row['Vcode']
+            }
             act_df = act_df._append(self.xml_parsing())
             self.df_indexes = act_df.copy()
-            self.read_line()
-        self.close_file()
     
     def processing(self):
         df_indexes = self.df_indexes
@@ -105,10 +122,11 @@ class EnumCurrencies(Cbr):
             }
             data.append(row)
         df = pd.DataFrame(data)
-        df.to_csv(link_folder + type_measures + '.csv', index = False, sep = ';')
+        df.to_csv(link_folder + type_measures + '.txt', index = False, sep = ';')
+        self.df = df
     
     def db_process(self):
-        df = pd.read_csv('bi_development/dashboards/cbr_currencies/enum.csv', encoding='utf-8', sep=';')
+        df = self.df
         engine = create_engine(self.connection_string)
         with engine.begin() as connection:
             data_to_insert = [
@@ -158,24 +176,29 @@ class CbrZCYC(Cbr):
         self.df_indexes.to_csv(link_folder + 'proc_' + type_measures + '.csv', index = False, sep = ';')
 
 
-
-link_folder = os.getcwd() + '/bi_development/dashboards/cbr_currencies/'
-link_file = 'resourses'
-# type_measures = 'cbr_currencies'
-list_column_name = ['date', 'name', 'value', 'unit']
-
 # indexes = Cbr(list_column_name, link_folder, link_file, days_before=30)
 # indexes.parsing_cycle()
 # indexes.processing()
 
-soap_action = 'http://web.cbr.ru/EnumValutesXML'
+# soap_action = 'http://web.cbr.ru/EnumValutesXML'
+# wsdl = 'https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL'
+# method = 'EnumValutesXML'
+# params = {'Seld': 0}
+# type_measures = 'enum'
+# indexes = EnumCurrencies(list_column_name, link_folder, link_file, 3, soap_action, wsdl, method, params)
+
+# indexes.parsing()
+# indexes.db_process()
+method = 'GetCursDynamicXML'
 wsdl = 'https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL'
-method = 'EnumValutesXML'
-params = {'Seld': 0}
-type_measures = 'enum'
-indexes = EnumCurrencies(list_column_name, link_folder, link_file, 3, soap_action, wsdl, method, params)
+soap_action = 'http://web.cbr.ru/GetCursDynamicXML'
 
-indexes.parsing()
-indexes.db_process()
+link_folder = os.getcwd() + '/bi_development/dashboards/cbr_currencies/'
+link_file = 'resourses'
+type_measures = 'cbr_currencies'
+list_column_name = ['date', 'name', 'value', 'unit']
 
+indexes = Currencies(list_column_name, link_folder, link_file, 10, soap_action, wsdl, method, params={})
+indexes.parsing_cycle()
+indexes.processing()
 
