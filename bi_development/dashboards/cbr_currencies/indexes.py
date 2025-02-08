@@ -4,7 +4,6 @@ import soap_requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from zeep import Client, Plugin
-from sqlalchemy import create_engine, text
 from decouple import config
     
 
@@ -33,6 +32,7 @@ class Cbr():
         self.method = method
         self.dates = ()
         self.currency = ''
+        self.currency_code = ''
         self.days_before = days_before
         self.df_indexes = pd.DataFrame(columns=self.list_column_name)
         self.parametrs = params
