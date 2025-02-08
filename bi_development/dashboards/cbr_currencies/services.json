@@ -1,0 +1,29 @@
+{
+    "services": [
+      {
+        "name": "EnumCurrencies",
+        "method": "EnumValutesXML",
+        "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
+        "parametrs": {
+          "Seld": 0
+        },
+        "root_tag": "EnumValutes",
+        "tags": ["Vcode", "Vname", "VEngname", "Vnom"],
+        "columns": ["v_code", "v_name", "v_eng_name", "v_nom"]
+      },
+      {
+        "name": "Currencies",
+        "method": "GetCursDynamicXML",
+        "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
+        "soap_action": "http://web.cbr.ru/GetCursDynamicXML",
+        "parametrs": [
+          "FromDate",
+          "ToDate",
+          "ValutaCode"
+        ],
+        "root_tag": "ValuteCursDynamic",
+        "tags": ["CursDate", "Vcurs", "Vnom"],
+        "columns": ["date", "name", "value", "unit"]
+      }
+    ]
+}
