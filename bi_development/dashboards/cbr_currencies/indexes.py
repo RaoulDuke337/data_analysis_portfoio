@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 import os
 import soap_requests
@@ -18,37 +19,40 @@ class CustomHeaderPlugin(Plugin):
         return envelope, http_headers
 
 class Cbr():
-    def __init__(self, list_column_name, link_folder, link_file, days_before, soap_action, wsdl, method, params, separator = ';', extension = '.csv'):
-        self.list_column_name = list_column_name
-        self.link_address = link_folder + link_file + '.txt'
-        self.open_file = open(self.link_address, encoding='utf-8')
-        self.readline = ''
-        self.len_rl = 0
-        self.link_list = []
-        self.df = pd.DataFrame()
+    def __init__(self, days_before, service_name, params={}, separator = ';', extension = '.csv'):
+        self.list_column_name = []
         self.separator = separator
         self.extension = extension
-        self.soap_action = soap_action
-        self.wsdl = wsdl
-        self.method = method
+        self.soap_action = ''
+        self.wsdl = ''
+        self.method = ''
+        self.service_name = service_name
+        self.root_tag = ''
+        self.tags = []
         self.dates = ()
         self.currency = ''
         self.currency_code = ''
         self.days_before = days_before
         self.df_indexes = pd.DataFrame(columns=self.list_column_name)
         self.parametrs = params
+        self.query_parametrs = {}
         self.username = config('USERNAME')
         self.password = config('PASSWORD')
         self.db_name = config('DB_NAME')
+        self.configuration = {}
         self.conn = psycopg2.connect(dbname=self.db_name, user=self.username, password=self.password, host="127.0.0.1")
 
-    def read_line(self):
-        self.readline = self.open_file.readline()
-        self.len_rl = len(self.readline)    
-        self.link_list = self.readline.strip().split(self.separator)
-
-    def close_file(self):
-        self.open_file.close()
+    def read_config(self):
+        with open("./services.json", "r") as file:
+            services = json.load(file)
+        self.configuration = [service for service in services["services"] if service["name"] == self.service_name]
+        self.method = self.configuration[0].get('method')
+        self.wsdl = self.configuration[0].get('wsdl')
+        self.soap_action = self.configuration[0].get('soap_action')
+        self.list_column_name = self.configuration[0].get('columns')
+        self.root_tag = './/' + self.configuration[0].get('root_tag')
+        self.tags = self.configuration[0].get('tags')
+        self.parametrs = self.configuration[0].get('parametrs')
 
     def get_request_date(self):
         current_date = datetime.now()
@@ -59,96 +63,77 @@ class Cbr():
     def get_request(self):
         self.get_request_date()
         client = Client(wsdl=self.wsdl, plugins=[CustomHeaderPlugin(self.soap_action)])                
-        response = getattr(client.service, self.method)(**self.parametrs)
+        response = getattr(client.service, self.method)(**self.query_parametrs)
         return response
+    
+    def db_process(self, service_query='', insert_query=''):
+        df = self.df_indexes
+        cur = self.conn.cursor()
+        service_query = service_query
+        insert_query = insert_query
+        data_to_insert = list(df.itertuples(index=False))
+        try:
+            cur.execute(service_query)
+            cur.executemany(insert_query, data_to_insert)
+            self.conn.commit()
+        except Exception as e:
+            print(f"Произошла ошибка: {e}")
+        finally:
+            cur.close()
+        self.conn.close()
 
 class Currencies(Cbr):   
-    def xml_parsing(self):
+    def parsing(self):
         response = self.get_request()
         data = []
-        for tag in response.findall('.//ValuteCursDynamic', namespaces={'': ''}):
-            row = {'date': tag.find('CursDate').text,
-                   "v_code": self.currency_code,
-                   'name': self.currency,
-                   'value': tag.find('Vcurs').text,
-                   'unit': tag.find('Vnom').text
-                   }
+        for tag in response.findall(self.root_tag, namespaces={'': ''}):
+            row = {
+            column_name: (tag.find(tag_name).text.strip() if tag.find(tag_name) is not None else None)
+            for column_name, tag_name in zip(self.list_column_name, self.tags)
+        }
             data.append(row)
         df = pd.DataFrame(data)
+        df['name'] = self.currency
+        df['v_code'] = self.currency_code
         return df 
     
     def parsing_cycle(self):
         act_df = self.df_indexes.copy()
-        enum_df = pd.read_csv(link_folder + 'enum' + '.csv', sep = ';')
+        enum_df = pd.read_csv('./' + 'enum_currencies' + '.csv', sep = ';')
         for idx, row in enum_df.iterrows():
-            self.currency = row['Vname']
-            self.currency_code = row['Vcode']
+            self.currency = row['v_name']
+            self.currency_code = row['v_code']
             print(self.currency)
             self.get_request_date()
-            self.parametrs = {
-                'FromDate': self.dates[0],
-                'ToDate': self.dates[1],
-                'ValutaCode': row['Vcode']
-            }
-            act_df = act_df._append(self.xml_parsing())
+            self.query_parametrs = {
+                param: value for param, value in zip(self.parametrs, self.dates)
+                }
+            self.query_parametrs[self.parametrs[2]] = self.currency_code
+            act_df = act_df._append(self.parsing())
             self.df_indexes = act_df.copy()
     
     def processing(self):
         df_indexes = self.df_indexes
         df_indexes['date'] = pd.to_datetime(df_indexes['date'])
         df_indexes['date'] = df_indexes['date'].dt.strftime('%m/%d/%Y')
-        df_indexes = df_indexes[['date', 'name', 'value', 'unit', 'v_code']]
         self.df_indexes = df_indexes
-        self.df_indexes.to_csv(link_folder + 'proc_' + type_measures + '.csv', index = False, sep = ';')
-    
-    def db_process(self, insert_query='', service_query=''):
-        df = self.df_indexes
-        cur = self.conn.cursor()
-        insert_query_many = "INSERT INTO currencies_stage (date, name, value, unit, v_code) VALUES (%s, %s, %s, %s, %s)"
-        truncate_query = "TRUNCATE TABLE currencies_stage;"
-        data_to_insert = list(df.itertuples(index=False))
-        try:
-            cur.execute(truncate_query)
-            cur.executemany(insert_query_many, data_to_insert)
-            self.conn.commit()
-        except Exception as e:
-            print(f"Произошла ошибка: {e}")
-        finally:
-            cur.close()
-        self.conn.close()
+        self.df_indexes.to_csv('./' + 'proc_' + self.service_name + '.csv', index = False, sep = ';')
 
 class EnumCurrencies(Cbr):
     def parsing(self):
+        self.query_parametrs = self.parametrs
         response = self.get_request()
         data = []
-        for tag in response.findall('.//EnumValutes', namespaces={'': ''}):
+        for tag in response.findall(self.root_tag, namespaces={'': ''}):
+            # извекаем в root-теге все данные сопоставля названия столбцов с тегами через dict comp
             row = {
-                'Vcode': tag.find('Vcode').text.strip(),
-                'Vname': tag.find('Vname').text.strip(),
-                'VEngname': tag.find('VEngname').text.strip(),
-                'Vnom': tag.find('Vnom').text.strip()
-            }
+            column_name: (tag.find(tag_name).text.strip() if tag.find(tag_name) is not None else None)
+            for column_name, tag_name in zip(self.list_column_name, self.tags)
+        }
             data.append(row)
         df = pd.DataFrame(data)
-        self.df = df
-    
-
-    def db_process(self):
-        df = self.df 
-        cur = self.conn.cursor()
-        insert_query_many = "INSERT INTO currencies (v_code, v_name, v_eng_name, v_nom) VALUES (%s, %s, %s, %s)"
-        truncate_query = "TRUNCATE TABLE currencies;"
-        data_to_insert = list(df.itertuples(index=False))
-        try:
-            cur.execute(truncate_query)
-            cur.executemany(insert_query_many, data_to_insert)
-            self.conn.commit()
-        except Exception as e:
-            print(f"Произошла ошибка: {e}")
-        finally:
-            cur.close()
-        self.conn.close()
-
+        df.to_csv('./' + self.service_name + '.csv', index = False, sep = ';')
+        self.df_indexes = df
 
 class CbrZCYC(Cbr):
 # Метод parsing() для получения данных с cbr.ru использует SOAP-запрос к веб-сервису ЦБ (функция create_request() из модуля soap_requests)
@@ -180,48 +165,29 @@ class CbrZCYC(Cbr):
         df_indexes = df_indexes[['date', 'value', 'name']]
         self.df_indexes = df_indexes
         self.df_indexes['unit'] = ''
-        self.df_indexes.to_csv(link_folder + 'proc_' + type_measures + '.csv', index = False, sep = ';')
+        self.df_indexes.to_csv(link_folder + 'proc_' + self.service_name + '.csv', index = False, sep = ';')
 
 
-# indexes = Cbr(list_column_name, link_folder, link_file, days_before=30)
-# indexes.parsing_cycle()
-# indexes.processing()
+script_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_dir)
 
+service_query = 'TRUNCATE TABLE currencies;'
+insert_query = 'INSERT INTO currencies (v_code, v_name, v_eng_name, v_nom) VALUES (%s, %s, %s, %s)'
 
-# indexes.parsing()
-# indexes.db_process()
-# method = 'GetCursDynamicXML'
-# wsdl = 'https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL'
-# soap_action = 'http://web.cbr.ru/GetCursDynamicXML'
-
-link_folder = os.getcwd() + '/bi_development/dashboards/cbr_currencies/'
-link_file = 'resourses'
-# type_measures = 'cbr_currencies'
-list_column_name = ['date', 'name', 'value', 'unit']
-
-# indexes = Currencies(list_column_name, link_folder, link_file, 10, soap_action, wsdl, method, params={})
-# indexes.parsing_cycle()
-# indexes.processing()
-
-soap_action = 'http://web.cbr.ru/EnumValutesXML'
-wsdl = 'https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL'
-method = 'EnumValutesXML'
-params = {'Seld': 0}
-type_measures = 'enum'
-
-indexes = EnumCurrencies(list_column_name, link_folder, link_file, 3, soap_action, wsdl, method, params)
+indexes = EnumCurrencies(3, service_name='enum_currencies')
+indexes.read_config()
 indexes.parsing()
-indexes.db_process()
+indexes.db_process(service_query, insert_query)
 
 print('Загрузка справочника успешно')
 
-method = 'GetCursDynamicXML'
-wsdl = 'https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL'
-soap_action = 'http://web.cbr.ru/GetCursDynamicXML'
+service_query = "TRUNCATE TABLE currencies_stage;"
+insert_query = "INSERT INTO currencies_stage (date, value, unit, name, v_code) VALUES (%s, %s, %s, %s, %s)"
 
-indexes = Currencies(list_column_name, link_folder, link_file, 10, soap_action, wsdl, method, params={})
+indexes = Currencies(10, service_name='currencies')
+indexes.read_config()
 indexes.parsing_cycle()
 indexes.processing()
-indexes.db_process()
+indexes.db_process(service_query, insert_query)
 
 print('Загрузка фактов валют успешно')
