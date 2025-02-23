@@ -25,6 +25,47 @@
         "root_tag": "ValuteCursDynamic",
         "tags": ["CursDate", "Vcurs", "Vnom"],
         "columns": ["date", "value", "unit", "name", "v_code"]
+      },
+      {
+        "name": "metals",
+        "method": "DragMetDynamicXML",
+        "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
+        "soap_action": "http://web.cbr.ru/DragMetDynamicXML",
+        "parametrs": [
+            "fromDate",
+            "ToDate"
+          ],
+        "root_tag": "DrgMet",
+        "tags": ["DateMet", "CodMet", "price"],
+        "columns": ["date", "code_met", "price"]
+      },
+      {
+        "name": "reserves",
+        "method": "mrrfXML",
+        "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
+        "soap_action": "http://web.cbr.ru/mrrfXML",
+        "parametrs": [
+            "fromDate",
+            "ToDate"
+          ],
+        "root_tag": "mr",
+        "tags": ["D0", "p1", "p2", "p3", "p4", "p5", "p6"],
+        "columns": ["date", "all_reserves", "currency", "foregin_currency", "sdr", "mvf", "gold"],
+        "alt_columns": ["measure", "value"]
+      },
+      {
+        "name": "bonds",
+        "method": "zcyc_paramsXML",
+        "wsdl": "https://www.cbr.ru/secinfo/secinfo.asmx?WSDL",
+        "soap_action": "http://web.cbr.ru/zcyc_paramsXML",
+        "parametrs": [
+            "OnDate",
+            "ToDate"
+          ],
+        "root_tag": "zcyc_params/ZCYC",
+        "tags": ["D0", "v_0_5", "v_1_0", "v_2_0", "v_5_0", "v_10_0", "v_15_0", "v_30_0"],
+        "columns": ["date", "half_year", "year", "two_years", "five_years", "ten_years", "fifteen_years", "thirty_years"],
+        "alt_columns": ["measure", "value"]
       }
     ]
 }

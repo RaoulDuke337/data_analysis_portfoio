@@ -1,8 +1,7 @@
-import pprint
 from tkinter import W
-import requests
 from lxml import etree
 from zeep import Client, Plugin
+from datetime import datetime, timedelta
 
 
 class CustomHeaderPlugin(Plugin):
@@ -20,21 +19,30 @@ class CustomHeaderPlugin(Plugin):
             self.index += 1
         return envelope, http_headers
 
+def get_request_date():
+    current_date = datetime.now()
+    todate = current_date
+    fromdate = todate - timedelta(days=30)
+    dates = (fromdate, todate)
+    return dates
 
+dates = get_request_date()
 
-soap_actions = ['"http://web.cbr.ru/EnumValutesXML"']
-wsdl = 'https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL'
+soap_actions = ['"http://web.cbr.ru/zcyc_paramsXML"']
+wsdl = 'https://www.cbr.ru/secinfo/secinfo.asmx?WSDL'
 parameters = {
-    'Seld': 0
+    "OnDate": dates[0],
+    "ToDate": dates[1]
 }
 
-client = Client(wsdl=wsdl, plugins=[CustomHeaderPlugin(soap_actions)])
-methods = ['EnumValutesXML']
+print(parameters)
 
-for method_name, parameters, soap_action in zip(methods, parameters, soap_actions):
-    response = getattr(client.service, method_name)(parameters)
+client = Client(wsdl=wsdl, plugins=[CustomHeaderPlugin(soap_actions)])
+method = 'zcyc_paramsXML'
+
+response = getattr(client.service, method)(**parameters)
     
 
-with open("./EnumValutesXML.xml", "w") as f:
+with open("./zcyc_params.xml", "w") as f:
     f.write(etree.tostring(response, pretty_print=True, encoding='unicode'))
 

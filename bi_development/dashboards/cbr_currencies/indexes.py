@@ -21,6 +21,7 @@ class CustomHeaderPlugin(Plugin):
 class Cbr():
     def __init__(self, days_before, service_name, params={}, separator = ';', extension = '.csv'):
         self.list_column_name = []
+        self.alt_columns = []
         self.separator = separator
         self.extension = extension
         self.soap_action = ''
@@ -50,6 +51,7 @@ class Cbr():
         self.wsdl = self.configuration[0].get('wsdl')
         self.soap_action = self.configuration[0].get('soap_action')
         self.list_column_name = self.configuration[0].get('columns')
+        self.alt_columns = self.configuration[0].get('alt_columns')
         self.root_tag = './/' + self.configuration[0].get('root_tag')
         self.tags = self.configuration[0].get('tags')
         self.parametrs = self.configuration[0].get('parametrs')
@@ -65,6 +67,18 @@ class Cbr():
         client = Client(wsdl=self.wsdl, plugins=[CustomHeaderPlugin(self.soap_action)])                
         response = getattr(client.service, self.method)(**self.query_parametrs)
         return response
+    
+    def parsing(self, response):
+        data = []
+        for tag in response.findall(self.root_tag, namespaces={'': ''}):
+            row = {
+                # извекаем в root-теге все данные сопоставля названия столбцов с тегами через dict comp
+                column_name: (tag.find(tag_name).text.strip() if tag.find(tag_name) is not None else None)
+                for column_name, tag_name in zip(self.list_column_name, self.tags)
+            }
+            data.append(row)
+        df = pd.DataFrame(data)
+        return df
     
     def db_process(self, service_query='', insert_query=''):
         df = self.df_indexes
@@ -85,17 +99,10 @@ class Cbr():
 class Currencies(Cbr):   
     def parsing(self):
         response = self.get_request()
-        data = []
-        for tag in response.findall(self.root_tag, namespaces={'': ''}):
-            row = {
-            column_name: (tag.find(tag_name).text.strip() if tag.find(tag_name) is not None else None)
-            for column_name, tag_name in zip(self.list_column_name, self.tags)
-        }
-            data.append(row)
-        df = pd.DataFrame(data)
+        df = super().parsing(response)
         df['name'] = self.currency
         df['v_code'] = self.currency_code
-        return df 
+        return df
     
     def parsing_cycle(self):
         act_df = self.df_indexes.copy()
@@ -120,24 +127,26 @@ class Currencies(Cbr):
         self.df_indexes.to_csv('./' + 'proc_' + self.service_name + '.csv', index = False, sep = ';')
 
 class EnumCurrencies(Cbr):
-    def parsing(self):
+   def parsing(self):
         self.query_parametrs = self.parametrs
+        self.dates = self.get_request_date()
         response = self.get_request()
-        data = []
-        for tag in response.findall(self.root_tag, namespaces={'': ''}):
-            # извекаем в root-теге все данные сопоставля названия столбцов с тегами через dict comp
-            row = {
-            column_name: (tag.find(tag_name).text.strip() if tag.find(tag_name) is not None else None)
-            for column_name, tag_name in zip(self.list_column_name, self.tags)
+        df = super().parsing(response)
+        df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
+        self.df_indexes = df
+
+class Metals(Cbr):
+    def parsing(self):
+        self.get_request_date()
+        self.query_parametrs = {
+            param: value for param, value in zip(self.parametrs, self.dates)
         }
-            data.append(row)
-        df = pd.DataFrame(data)
-        df.to_csv('./' + self.service_name + '.csv', index = False, sep = ';')
+        response = self.get_request()
+        df = super().parsing(response)
+        df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
         self.df_indexes = df
 
 class CbrZCYC(Cbr):
-# Метод parsing() для получения данных с cbr.ru использует SOAP-запрос к веб-сервису ЦБ (функция create_request() из модуля soap_requests)
-# В идеале, в случае, если будут использоваться много различных запросов к api, нужно делать хранилище шаблонов и брать параметры парсинга из переменных
     def parsing(self):
         response = ET.fromstring(soap_requests.create_request().content)
         data = []
@@ -167,27 +176,67 @@ class CbrZCYC(Cbr):
         self.df_indexes['unit'] = ''
         self.df_indexes.to_csv(link_folder + 'proc_' + self.service_name + '.csv', index = False, sep = ';')
 
+class Reserves(Cbr):
+    def parsing(self):
+        self.get_request_date()
+        self.query_parametrs = {
+            param: value for param, value in zip(self.parametrs, self.dates)
+        }
+        response = self.get_request()
+        df = super().parsing(response)
+        df = df.melt(id_vars=[self.list_column_name[0]], value_vars=self.list_column_name[1:], var_name=self.alt_columns[0], value_name=self.alt_columns[1])
+        df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
+        self.df_indexes = df
+
+class Bonds(Cbr):
+    def parsing(self):
+        self.get_request_date()
+        self.query_parametrs = {
+            param: value for param, value in zip(self.parametrs, self.dates)
+        }
+        response = self.get_request()
+        df = super().parsing(response)
+        df = df.melt(id_vars=[self.list_column_name[0]], value_vars=self.list_column_name[1:], var_name=self.alt_columns[0], value_name=self.alt_columns[1])
+        df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
+        self.df_indexes = df
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 
-service_query = 'TRUNCATE TABLE currencies;'
-insert_query = 'INSERT INTO currencies (v_code, v_name, v_eng_name, v_nom) VALUES (%s, %s, %s, %s)'
+# service_query = 'TRUNCATE TABLE currencies;'
+# insert_query = 'INSERT INTO currencies (v_code, v_name, v_eng_name, v_nom) VALUES (%s, %s, %s, %s)'
 
-indexes = EnumCurrencies(3, service_name='enum_currencies')
+# indexes = EnumCurrencies(3, service_name='enum_currencies')
+# indexes.read_config()
+# indexes.parsing()
+# indexes.db_process(service_query, insert_query)
+
+# print('Загрузка справочника успешно')
+
+# service_query = "TRUNCATE TABLE currencies_stage;"
+# insert_query = "INSERT INTO currencies_stage (date, value, unit, name, v_code) VALUES (%s, %s, %s, %s, %s)"
+
+# indexes = Currencies(10, service_name='currencies')
+# indexes.read_config()
+# indexes.parsing_cycle()
+# indexes.processing()
+# indexes.db_process(service_query, insert_query)
+
+# print('Загрузка фактов валют успешно')
+
+# service_query = 'TRUNCATE TABLE metals_stage;'
+# insert_query = 'INSERT INTO metals_stage (date, code_met, price) VALUES (%s, %s, %s)'
+
+# indexes = Metals(10, service_name='metals')
+# indexes.read_config()
+# indexes.parsing()
+# indexes.db_process(service_query, insert_query)
+
+
+service_query = 'TRUNCATE TABLE reserves_stage;'
+insert_query = 'INSERT INTO reserves_stage (date, measure, value) VALUES (%s, %s, %s)'
+
+indexes = Reserves(60, service_name='reserves')
 indexes.read_config()
 indexes.parsing()
 indexes.db_process(service_query, insert_query)
-
-print('Загрузка справочника успешно')
-
-service_query = "TRUNCATE TABLE currencies_stage;"
-insert_query = "INSERT INTO currencies_stage (date, value, unit, name, v_code) VALUES (%s, %s, %s, %s, %s)"
-
-indexes = Currencies(10, service_name='currencies')
-indexes.read_config()
-indexes.parsing_cycle()
-indexes.processing()
-indexes.db_process(service_query, insert_query)
-
-print('Загрузка фактов валют успешно')
