@@ -28,21 +28,22 @@ def get_request_date():
 
 dates = get_request_date()
 
-soap_actions = ['"http://web.cbr.ru/zcyc_paramsXML"']
-wsdl = 'https://www.cbr.ru/secinfo/secinfo.asmx?WSDL'
+soap_actions = ['"http://web.cbr.ru/OstatDepoNewXML"']
+wsdl = 'https://cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL'
 parameters = {
-    "OnDate": dates[0],
+    "fromDate": dates[0],
     "ToDate": dates[1]
 }
 
 print(parameters)
 
 client = Client(wsdl=wsdl, plugins=[CustomHeaderPlugin(soap_actions)])
-method = 'zcyc_paramsXML'
+method = 'OstatDepoNewXML'
 
 response = getattr(client.service, method)(**parameters)
     
 
-with open("./zcyc_params.xml", "w") as f:
+with open("./OstatDepoNewXML.xml", "w") as f:
     f.write(etree.tostring(response, pretty_print=True, encoding='unicode'))
+
 

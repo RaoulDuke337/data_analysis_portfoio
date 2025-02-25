@@ -61,6 +61,9 @@ class Cbr():
         fromdate = todate - timedelta(days=self.days_before)
         self.dates = (fromdate, todate)
 
+    def convert_to_datetime(self, date_str):
+        return datetime.strptime(f"01.{date_str}", "%d.%m.%Y").strftime("%Y-%m-%d")
+
     def get_request(self):
         self.get_request_date()
         client = Client(wsdl=self.wsdl, plugins=[CustomHeaderPlugin(self.soap_action)])                
@@ -169,6 +172,44 @@ class Bonds(Cbr):
         df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
         self.df_indexes = df
 
+class Inflation(Cbr):
+    def parsing(self):
+        self.get_request_date()
+        self.query_parametrs = {
+            param: value for param, value in zip(self.parametrs, self.dates)
+        }
+        response = self.get_request()
+        df = super().parsing(response)
+        self.df_indexes = df
+
+    def processing(self):
+        df = self.df_indexes
+        df['date'] = df['date'].apply(self.convert_to_datetime)
+        df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
+        self.df_indexes = df
+
+class AvKeyRate(Cbr):
+    def parsing(self):
+        self.get_request_date()
+        self.query_parametrs = {
+            param: value for param, value in zip(self.parametrs, self.dates)
+        }
+        response = self.get_request()
+        df = super().parsing(response)
+        df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
+        self.df_indexes = df
+
+class Deposits(Cbr):
+    def parsing(self, response):
+        self.get_request_date()
+        self.query_parametrs = {
+            param: value for param, value in zip(self.parametrs, self.dates)
+        }
+        response = self.get_request()
+        df = super().parsing(response)
+        df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
+        self.df_indexes = df
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 
@@ -210,10 +251,30 @@ os.chdir(script_dir)
 # indexes.parsing()
 # indexes.db_process(service_query, insert_query)
 
-service_query = 'TRUNCATE TABLE gov_bonds_stage;'
-insert_query = 'INSERT INTO gov_bonds_stage (date, measure, value) VALUES (%s, %s, %s)'
+# service_query = 'TRUNCATE TABLE gov_bonds_stage;'
+# insert_query = 'INSERT INTO gov_bonds_stage (date, measure, value) VALUES (%s, %s, %s)'
 
-indexes = Bonds(60, service_name='bonds')
+# indexes = Bonds(60, service_name='bonds')
+# indexes.read_config()
+# indexes.parsing()
+# indexes.db_process(service_query, insert_query)
+
+
+# service_query = 'TRUNCATE TABLE inflation_stage;'
+# insert_query = 'INSERT INTO inflation_stage (date, key_rate, inf_fact, inf_goal) VALUES (%s, %s, %s, %s)'
+
+
+# indexes = Inflation(300, service_name='inflation')
+# indexes.read_config()
+# indexes.parsing()
+# indexes.processing()
+# indexes.db_process(service_query, insert_query)
+
+
+service_query = 'TRUNCATE TABLE av_key_rate_stage;'
+insert_query = 'INSERT INTO av_key_rate_stage (date, fact) VALUES (%s, %s)'
+
+indexes = AvKeyRate(90, service_name='avg_key_rate')
 indexes.read_config()
 indexes.parsing()
 indexes.db_process(service_query, insert_query)

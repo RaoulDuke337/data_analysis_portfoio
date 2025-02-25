@@ -66,6 +66,45 @@
         "tags": ["D0", "v_0_5", "v_1_0", "v_2_0", "v_5_0", "v_10_0", "v_15_0", "v_30_0"],
         "columns": ["date", "half_year", "year", "two_years", "five_years", "ten_years", "fifteen_years", "thirty_years"],
         "alt_columns": ["measure", "value"]
-      }
+      },
+      {
+        "name": "inflation",
+        "method": "InflationXML",
+        "wsdl": "https://www.cbr.ru/secinfo/secinfo.asmx?WSDL",
+        "soap_action": "http://web.cbr.ru/InflationXML",
+        "parametrs": [
+            "DateFrom",
+            "DateTo"
+          ],
+        "root_tag": "RI",
+        "tags": ["DTS", "KeyRate", "infVal", "AimVal"],
+        "columns": ["date", "key_rate", "inf_fact", "inf_goal"]
+      },
+      {
+        "name": "avg_key_rate",
+        "method": "AvgprocstavXML",
+        "wsdl": "https://www.cbr.ru/secinfo/secinfo.asmx?WSDL",
+        "soap_action": "http://web.cbr.ru/AvgprocstavXML",
+        "parametrs": [
+            "DateFrom",
+            "DateTo"
+          ],
+        "root_tag": "AP",
+        "tags": ["D0", "Val"],
+        "columns": ["date", "fact"]
+      },
+      {
+        "name": "deposits",
+        "method": "OstatDepoNewXML",
+        "wsdl": "https://cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
+        "soap_action": "http://web.cbr.ru/OstatDepoNewXML",
+        "parametrs": [
+            "fromDate",
+            "ToDate"
+          ],
+        "root_tag": "odn",
+        "tags": ["DT", "TOTAL", "AUC_1W", "OV_P"],
+        "columns": ["date", "total", "one_week", "overnight"]
+      }   
     ]
 }
