@@ -1,7 +1,6 @@
 import json
 import pandas as pd
 import os
-import soap_requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from zeep import Client, Plugin
@@ -146,36 +145,6 @@ class Metals(Cbr):
         df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
         self.df_indexes = df
 
-class CbrZCYC(Cbr):
-    def parsing(self):
-        response = ET.fromstring(soap_requests.create_request().content)
-        data = []
-        for tag in response.findall('.//zcyc_params/ZCYC', namespaces={'': ''}):
-            row = {
-                self.list_column_name[0]: tag.find('D0').text,
-                'year_1': tag.find('v_1_0').text,
-                'year_5': tag.find('v_2_0').text,
-                'year_10': tag.find('v_10_0').text
-                }
-            data.append(row)
-        df = pd.DataFrame(data)
-        return df
-    
-    def processing(self):
-        df = self.parsing()
-        df_indexes = df.melt(id_vars=[self.list_column_name[0]], value_vars=['year_1', 'year_5', 'year_10'], var_name=self.list_column_name[1], value_name=self.list_column_name[2])
-        df_indexes['date'] = pd.to_datetime(df_indexes['date'])
-        df_indexes['date'] = df_indexes['date'].dt.strftime('%d.%m.%Y')
-        df_indexes['name'] = df_indexes['name'].replace({
-            'year_1':'Доходность облигации Россия годовые, RUB',
-            'year_5':'Доходность облигации Россия 2-летние, RUB',
-            'year_10':'Доходность облигации Россия 10-летние, RUB'
-        })
-        df_indexes = df_indexes[['date', 'value', 'name']]
-        self.df_indexes = df_indexes
-        self.df_indexes['unit'] = ''
-        self.df_indexes.to_csv(link_folder + 'proc_' + self.service_name + '.csv', index = False, sep = ';')
-
 class Reserves(Cbr):
     def parsing(self):
         self.get_request_date()
@@ -233,10 +202,18 @@ os.chdir(script_dir)
 # indexes.db_process(service_query, insert_query)
 
 
-service_query = 'TRUNCATE TABLE reserves_stage;'
-insert_query = 'INSERT INTO reserves_stage (date, measure, value) VALUES (%s, %s, %s)'
+# service_query = 'TRUNCATE TABLE reserves_stage;'
+# insert_query = 'INSERT INTO reserves_stage (date, measure, value) VALUES (%s, %s, %s)'
 
-indexes = Reserves(60, service_name='reserves')
+# indexes = Reserves(60, service_name='reserves')
+# indexes.read_config()
+# indexes.parsing()
+# indexes.db_process(service_query, insert_query)
+
+service_query = 'TRUNCATE TABLE gov_bonds_stage;'
+insert_query = 'INSERT INTO gov_bonds_stage (date, measure, value) VALUES (%s, %s, %s)'
+
+indexes = Bonds(60, service_name='bonds')
 indexes.read_config()
 indexes.parsing()
 indexes.db_process(service_query, insert_query)
