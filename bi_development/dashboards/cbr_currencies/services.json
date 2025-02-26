@@ -6,8 +6,9 @@
         "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/EnumValutesXML",
         "parametrs": {
-          "Seld": 0
+          "Seld":0
         },
+        "param_values": 0,
         "root_tag": "EnumValutes",
         "tags": ["Vcode", "Vname", "VEngname", "Vnom"],
         "columns": ["v_code", "v_name", "v_eng_name", "v_nom"]

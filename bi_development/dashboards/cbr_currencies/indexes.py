@@ -82,6 +82,24 @@ class Cbr():
         df = pd.DataFrame(data)
         return df
     
+    def universal_parsing(self):
+        self.get_request_date()
+        self.query_parametrs = {
+            param: value for param, value in zip(self.parametrs, self.dates)
+        }
+        response = self.get_request()
+        data = []
+        for tag in response.findall(self.root_tag, namespaces={'': ''}):
+            row = {
+                # извекаем в root-теге все данные сопоставля названия столбцов с тегами через dict comp
+                column_name: (tag.find(tag_name).text.strip() if tag.find(tag_name) is not None else None)
+                for column_name, tag_name in zip(self.list_column_name, self.tags)
+            }
+            data.append(row)
+        df = pd.DataFrame(data)
+        df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
+        self.df_indexes = df
+    
     def db_process(self, service_query='', insert_query=''):
         df = self.df_indexes
         cur = self.conn.cursor()
@@ -120,13 +138,7 @@ class Currencies(Cbr):
             self.query_parametrs[self.parametrs[2]] = self.currency_code
             act_df = act_df._append(self.parsing())
             self.df_indexes = act_df.copy()
-    
-    def processing(self):
-        df_indexes = self.df_indexes
-        df_indexes['date'] = pd.to_datetime(df_indexes['date'])
-        df_indexes['date'] = df_indexes['date'].dt.strftime('%m/%d/%Y')
-        self.df_indexes = df_indexes
-        self.df_indexes.to_csv('./' + 'proc_' + self.service_name + '.csv', index = False, sep = ';')
+        self.df_indexes.to_csv('./' + self.service_name + '.csv', index = False, sep = ';')
 
 class EnumCurrencies(Cbr):
    def parsing(self):
@@ -137,78 +149,21 @@ class EnumCurrencies(Cbr):
         df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
         self.df_indexes = df
 
-class Metals(Cbr):
+class ReservesAndBonds(Cbr):
     def parsing(self):
-        self.get_request_date()
-        self.query_parametrs = {
-            param: value for param, value in zip(self.parametrs, self.dates)
-        }
-        response = self.get_request()
-        df = super().parsing(response)
-        df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
-        self.df_indexes = df
-
-class Reserves(Cbr):
-    def parsing(self):
-        self.get_request_date()
-        self.query_parametrs = {
-            param: value for param, value in zip(self.parametrs, self.dates)
-        }
-        response = self.get_request()
-        df = super().parsing(response)
-        df = df.melt(id_vars=[self.list_column_name[0]], value_vars=self.list_column_name[1:], var_name=self.alt_columns[0], value_name=self.alt_columns[1])
-        df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
-        self.df_indexes = df
-
-class Bonds(Cbr):
-    def parsing(self):
-        self.get_request_date()
-        self.query_parametrs = {
-            param: value for param, value in zip(self.parametrs, self.dates)
-        }
-        response = self.get_request()
-        df = super().parsing(response)
+        self.universal_parsing()
+        df = self.df_indexes
         df = df.melt(id_vars=[self.list_column_name[0]], value_vars=self.list_column_name[1:], var_name=self.alt_columns[0], value_name=self.alt_columns[1])
         df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
         self.df_indexes = df
 
 class Inflation(Cbr):
-    def parsing(self):
-        self.get_request_date()
-        self.query_parametrs = {
-            param: value for param, value in zip(self.parametrs, self.dates)
-        }
-        response = self.get_request()
-        df = super().parsing(response)
-        self.df_indexes = df
-
     def processing(self):
         df = self.df_indexes
         df['date'] = df['date'].apply(self.convert_to_datetime)
         df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
         self.df_indexes = df
 
-class AvKeyRate(Cbr):
-    def parsing(self):
-        self.get_request_date()
-        self.query_parametrs = {
-            param: value for param, value in zip(self.parametrs, self.dates)
-        }
-        response = self.get_request()
-        df = super().parsing(response)
-        df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
-        self.df_indexes = df
-
-class Deposits(Cbr):
-    def parsing(self, response):
-        self.get_request_date()
-        self.query_parametrs = {
-            param: value for param, value in zip(self.parametrs, self.dates)
-        }
-        response = self.get_request()
-        df = super().parsing(response)
-        df.to_csv('./' + self.service_name + '.csv', index=False, sep=';')
-        self.df_indexes = df
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
@@ -229,18 +184,20 @@ os.chdir(script_dir)
 # indexes = Currencies(10, service_name='currencies')
 # indexes.read_config()
 # indexes.parsing_cycle()
-# indexes.processing()
+# # indexes.processing()
 # indexes.db_process(service_query, insert_query)
 
 # print('Загрузка фактов валют успешно')
 
-# service_query = 'TRUNCATE TABLE metals_stage;'
-# insert_query = 'INSERT INTO metals_stage (date, code_met, price) VALUES (%s, %s, %s)'
+service_query = 'TRUNCATE TABLE metals_stage;'
+insert_query = 'INSERT INTO metals_stage (date, code_met, price) VALUES (%s, %s, %s)'
 
-# indexes = Metals(10, service_name='metals')
-# indexes.read_config()
-# indexes.parsing()
-# indexes.db_process(service_query, insert_query)
+indexes = Cbr(10, service_name='metals')
+indexes.read_config()
+indexes.universal_parsing()
+indexes.db_process(service_query, insert_query)
+
+print('Загрузка металлов прошла успешно')
 
 
 # service_query = 'TRUNCATE TABLE reserves_stage;'
@@ -271,10 +228,20 @@ os.chdir(script_dir)
 # indexes.db_process(service_query, insert_query)
 
 
-service_query = 'TRUNCATE TABLE av_key_rate_stage;'
-insert_query = 'INSERT INTO av_key_rate_stage (date, fact) VALUES (%s, %s)'
+# service_query = 'TRUNCATE TABLE av_key_rate_stage;'
+# insert_query = 'INSERT INTO av_key_rate_stage (date, fact) VALUES (%s, %s)'
 
-indexes = AvKeyRate(90, service_name='avg_key_rate')
-indexes.read_config()
-indexes.parsing()
-indexes.db_process(service_query, insert_query)
+# indexes = AvKeyRate(90, service_name='avg_key_rate')
+# indexes.read_config()
+# indexes.parsing()
+# indexes.db_process(service_query, insert_query)
+
+
+# service_query = 'TRUNCATE TABLE deposits_stage;'
+# insert_query = 'INSERT INTO deposits_stage (date, total, one_week, overnight) VALUES (%s, %s, %s, %s)'
+
+
+# indexes = Deposits(30, service_name='deposits')
+# indexes.read_config()
+# indexes.parsing()
+# indexes.db_process(service_query, insert_query)
