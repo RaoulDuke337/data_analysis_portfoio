@@ -1,4 +1,3 @@
-from tkinter import W
 from lxml import etree
 from zeep import Client, Plugin
 from datetime import datetime, timedelta
@@ -41,9 +40,10 @@ client = Client(wsdl=wsdl, plugins=[CustomHeaderPlugin(soap_actions)])
 method = 'OstatDepoNewXML'
 
 response = getattr(client.service, method)(**parameters)
-    
+   
+print(type(response))
 
-with open("./OstatDepoNewXML.xml", "w") as f:
-    f.write(etree.tostring(response, pretty_print=True, encoding='unicode'))
+# with open("./OstatDepoNewXML.xml", "w") as f:
+#     f.write(etree.tostring(response, pretty_print=True, encoding='unicode'))
 
 

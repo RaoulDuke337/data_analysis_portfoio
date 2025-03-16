@@ -245,3 +245,11 @@ print('Загрузка металлов прошла успешно')
 # indexes.read_config()
 # indexes.parsing()
 # indexes.db_process(service_query, insert_query)
+
+
+
+
+# 1) Read_config
+# 2) Parser
+# 3) CSV_Writer(optional)
+# 4) Db_Processer
