@@ -18,14 +18,16 @@
         "method": "GetCursDynamicXML",
         "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/GetCursDynamicXML",
+        "days_before": 10,
         "parametrs": [
           "FromDate",
           "ToDate",
           "ValutaCode"
         ],
+        "csv_source": "enum_currencies.csv",
         "root_tag": "ValuteCursDynamic",
-        "tags": ["CursDate", "Vcurs", "Vnom"],
-        "columns": ["date", "value", "unit", "name", "v_code"]
+        "tags": ["CursDate", "Vcurs", "Vnom", "Vcode"],
+        "columns": ["date", "value", "unit", "v_code"]
       },
       {
         "name": "metals",
