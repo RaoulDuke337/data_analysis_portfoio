@@ -27,7 +27,9 @@
         "csv_source": "enum_currencies.csv",
         "root_tag": "ValuteCursDynamic",
         "tags": ["CursDate", "Vcurs", "Vnom", "Vcode"],
-        "columns": ["date", "value", "unit", "v_code"]
+        "columns": ["date", "value", "unit", "v_code"],
+        "service_query": "TRUNCATE TABLE currencies_stage",
+        "insert_query": "INSERT INTO currencies_stage (date, value, unit, v_code) VALUES"
       },
       {
         "name": "metals",

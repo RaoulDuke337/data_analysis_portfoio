@@ -23,12 +23,8 @@ class CustomHeaderPlugin(Plugin):
 class Context:
     """Объект для хранения общих атрибутов между компонентами"""
     def __init__(self, service_name):
-        self.username = config('USERNAME')
-        self.password = config('PASSWORD')
-        self.db_name = config('DB_NAME')
         self.configuration = {}
         self.service_name = service_name
-        self.conn = psycopg2.connect(dbname=self.db_name, user=self.username, password=self.password, host="127.0.0.1")
 
     def get_attr(self, attr: str):
         with open("./services.json", "r") as file:
@@ -51,6 +47,7 @@ class ISoapClient(ABC):
         """Общий метод для получения данных"""
         pass
 
+
 class IDateSoapClient(ISoapClient):
     """Расширенный клиент с датами"""
     def __init__(self, context: Context):
@@ -64,35 +61,7 @@ class IDateSoapClient(ISoapClient):
         todate = current_date
         fromdate = todate - timedelta(days=self.days_before)
         self.dates = (fromdate, todate)
-
-
-# 2. Абстракция парсера XML -> DataFrame
-class IParser(ABC):
-    def __init__(self, context: Context):
-        self.root_tag = './' + context.get_attr('root_tag')
-        self.tags = context.get_attr('tags')
-        self.columns = context.get_attr('columns')
-
-    @abstractmethod
-    def parse(self, xml_data: any) -> pd.DataFrame:
-        """Метод для парсинга XML-данных в DataFrame"""
-        pass
         
-
-
-# 3. Абстракция трансформации данных
-class ITransformer(ABC):
-    @abstractmethod
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        pass
-
-
-# 4. Абстракция загрузки в БД
-class ILoader(ABC):
-    @abstractmethod
-    def load(self, df: pd.DataFrame):
-        pass
-
 
 # 5. Конкретный клиент SOAP
 class NoDateSoapClient(ISoapClient):
@@ -178,6 +147,19 @@ class SoapServiceFactory:
         else:
             return NoDateSoapClient(context)  # Заглушка для других сервисов
 
+
+# 2. Абстракция парсера XML -> DataFrame
+class IParser(ABC):
+    def __init__(self, context: Context):
+        self.root_tag = './' + context.get_attr('root_tag')
+        self.tags = context.get_attr('tags')
+        self.columns = context.get_attr('columns')
+
+    @abstractmethod
+    def parse(self, xml_data: any) -> pd.DataFrame:
+        """Метод для парсинга XML-данных в DataFrame"""
+        pass
+
 # 6. Конкретный парсер
 class MainParser(IParser):
     def __init__(self, context: Context):
@@ -200,17 +182,54 @@ class MainParser(IParser):
         return df
 
 
-# 7. Конкретный трансформер
-class ExampleTransformer(ITransformer):
+# 3. Абстракция трансформации данных
+class ITransformer(ABC):
+    @abstractmethod
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        df["name"] = df["name"].str.upper()
+        pass
+
+class NoTransformer(ITransformer):
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        return df
+
+class CurrencyTransformer(ITransformer):
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         return df
 
 
+# 4. Абстракция загрузки в БД
+class ILoader(ABC):
+    def __init__(self, context: Context):
+        self.context = context
+
+    @abstractmethod
+    def load(self, df: pd.DataFrame):
+        pass
+
 # 8. Конкретный загрузчик в БД
-class ExampleLoader(ILoader):
+class PostgresLoader(ILoader):
+    def __init__(self, context: Context):
+        super().__init__(context)
+        self.username = config('USERNAME')
+        self.password = config('PASSWORD')
+        self.db_name = config('DB_NAME')
+        self.conn = psycopg2.connect(dbname=self.db_name, user=self.username, password=self.password, host="127.0.0.1")
+        
     def load(self, df: pd.DataFrame):
         print(f"Загрузка {len(df)} записей в БД...")
+        cur = self.conn.cursor()
+        service_query = self.context.get_attr('service_query')
+        insert_query = self.context.get_attr('insert_query') + f'({", ".join(["%s" for _ in range(len(df.columns))])})'
+        data_to_insert = list(df.itertuples(index=False, name=None))
+        try:
+            cur.execute(service_query)
+            cur.executemany(insert_query, data_to_insert)
+            self.conn.commit()
+        except Exception as e:
+            print(f"Произошла ошибка: {e}")
+        finally:
+            cur.close()
+        self.conn.close()
 
 
 # 9. Главный обработчик
@@ -235,9 +254,8 @@ class DataPipeline:
 
         # results = self.service.fetch_all() if isinstance(self.service, CurrencyFetcher) else [self.service.fetch_data()]
         
-        parsed = self.parser.parse(results)
-
-        # for result in results:
+        for result in results:
+            parsed = self.parser.parse(result)
             # transformed = self.transformer.transform(parsed)
             # self.loader.load(transformed)
 
@@ -251,7 +269,7 @@ if __name__ == "__main__":
         context=context,
         service=SoapServiceFactory(),
         parser=MainParser(context),
-        transformer=ExampleTransformer(),
-        loader=ExampleLoader(),
+        transformer=NoTransformer()(),
+        loader=PostgresLoader(),
     )
     pipeline.run()
