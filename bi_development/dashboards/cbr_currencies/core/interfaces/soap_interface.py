@@ -11,7 +11,7 @@ class ISoapClient(ABC):
         self.method = context.get_attr('method')
 
     @abstractmethod
-    def fetch_all(self) -> any:
+    def fetch_data(self) -> any:
         """Общий метод для получения данных"""
         pass
 

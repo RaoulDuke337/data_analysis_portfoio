@@ -16,7 +16,7 @@ class NoDateSoapClient(ISoapClient):
         super().__init__(context)
         self.query_parametrs = context.get_attr('parametrs')
 
-    def fetch_all(self) -> any:
+    def fetch_data(self) -> any:
         client = Client(wsdl=self.wsdl, plugins=[CustomHeaderPlugin(self.soap_action)])
         response = getattr(client.service, self.method)(**self.query_parametrs)
         return [response]
@@ -28,7 +28,7 @@ class DateSoapClient(IDateSoapClient):
         self.parameters = context.get_attr('parametrs')
         self.query_parametrs = None
 
-    def fetch_all(self) -> any:
+    def fetch_data(self) -> any:
         self.get_request_date()
         self.query_parametrs = {
             param: value for param, value in zip(self.parameters, self.dates)
@@ -43,6 +43,7 @@ class CurrencySoapClient(IDateSoapClient):
     def __init__(self, context):
         super().__init__(context)
         self.parameters = context.get_attr('parametrs')
+        self.csv_path = context.get_attr('csv_source')
         self.query_parametrs = None
 
     def fetch_data(self, currency_code) -> any:
@@ -59,9 +60,9 @@ class CurrencySoapClient(IDateSoapClient):
 class CurrencyFetcher:
     """Класс, который управляет запросами для каждой валюты."""
     
-    def __init__(self, soap_client: CurrencySoapClient):
-        self.soap_client = soap_client
-        self.csv_path = soap_client.context.get_attr('csv_source')
+    def __init__(self, context):
+        self.soap_client = CurrencySoapClient(context)
+        self.csv_path = self.soap_client.csv_path
         self.currencies = self.load_currencies()
 
     def load_currencies(self):

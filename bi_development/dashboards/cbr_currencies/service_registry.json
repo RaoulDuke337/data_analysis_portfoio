@@ -6,7 +6,7 @@
     "loader": "core.implementations.loaders.PostgresLoader"
   },
   "currencies": {
-    "soap_client": "core.implementations.clients.CurrencySoapClient",
+    "soap_client": "core.implementations.clients.CurrencyFetcher",
     "parser": "core.implementations.parsers.MainParser",
     "transformer": "core.implementations.transformers.NoTransformer",
     "loader": "core.implementations.loaders.PostgresLoader"

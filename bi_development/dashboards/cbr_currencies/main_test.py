@@ -39,7 +39,6 @@ class DataPipeline:
         """Запускает процесс обработки данных"""
         print('Запуск пайплайна')    
         results = self.soap_client.fetch_all()
-        print(results)
         parsed = self.parser.parse(results)
         transformed = self.transformer.transform(parsed)
         self.loader.load(transformed)
@@ -48,7 +47,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 
 if __name__ == "__main__":
-    context = Context(target_service="metals", config_path="./services.json", registry_path="./service_registry.json")
+    context = Context(target_service="currencies", config_path="./services.json", registry_path="./service_registry.json")
     factory = ServiceFactory(context)
     pipeline = DataPipeline(
         context=context,
