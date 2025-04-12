@@ -23,11 +23,11 @@ class CustomHeaderPlugin(Plugin):
 
 class Context:
     """Объект для хранения общих атрибутов между компонентами"""
-    def __init__(self, service_name: str, config_path: str = '/.services.json', registry_path: str = '/services_reg.json'):
+    def __init__(self, service_name: str, config_path: str, registry_path: str):
+        self.service_name = service_name
+        
         with open(config_path) as f:
             self.configuration = json.load(f)
-        self.service_name = service_name
-        self.registry_path = registry_path
 
         with open(registry_path) as f:
             raw_registry = json.load(f)
@@ -40,10 +40,19 @@ class Context:
             }
 
     def get_attr(self, attr: str):
-        with open("./services.json", "r") as file:
-            services = json.load(file)
-        self.configuration = [service for service in services["services"] if service["name"] == self.service_name]
+        self.configuration = [service for service in self.configuration["services"] if service["name"] == self.service_name]
         return self.configuration[0].get(attr)
+
+    def get_component(self, component_name: str):
+        """Вернёт нужный класс"""
+        service_type = self.configuration.get("name")
+        return self.registry[service_type][component_name]
+
+    def _import_class(self, dotted_path: str):
+        """Импортирует класс по полному dotted path."""
+        module_path, class_name = dotted_path.rsplit(".", 1)
+        module = importlib.import_module(module_path)
+        return getattr(module, class_name)
     
     
 
@@ -84,7 +93,7 @@ class NoDateSoapClient(ISoapClient):
         super().__init__(context)
         self.query_parametrs = context.get_attr('parametrs')
 
-    def fetch_data(self) -> any:
+    def fetch_all(self) -> any:
         client = Client(wsdl=self.wsdl, plugins=[CustomHeaderPlugin(self.soap_action)])
         response = getattr(client.service, self.method)(**self.query_parametrs)
         return [response]
@@ -96,7 +105,7 @@ class DateSoapClient(IDateSoapClient):
         self.parameters = context.get_attr('parametrs')
         self.query_parametrs = None
 
-    def fetch_data(self) -> any:
+    def fetch_all(self) -> any:
         self.get_request_date()
         self.query_parametrs = {
             param: value for param, value in zip(self.parameters, self.dates)
@@ -127,9 +136,9 @@ class CurrencySoapClient(IDateSoapClient):
 class CurrencyFetcher:
     """Класс, который управляет запросами для каждой валюты."""
     
-    def __init__(self, soap_client: CurrencySoapClient, csv_path):
+    def __init__(self, soap_client: CurrencySoapClient):
         self.soap_client = soap_client
-        self.csv_path = csv_path
+        self.csv_path = context.get_attr('csv_source')
         self.currencies = self.load_currencies()
 
     def load_currencies(self):
@@ -164,6 +173,23 @@ class SoapServiceFactory:
         else:
             return NoDateSoapClient(context)
 
+
+class ServiceFactory:
+    """Фабрика для переключения сервисов"""
+    def __init__(self, context: Context):
+        self.context = context
+
+    def get_soap_client(self):
+        return self.context.get_component("soap_client")(self.context)
+
+    def get_parser(self):
+        return self.context.get_component("parser")(self.context)
+
+    def get_transformer(self):
+        return self.context.get_component("transformer")(self.context)
+
+    def get_loader(self):
+        return self.context.get_component("loader")(self.context)
 
 # 2. Абстракция парсера XML -> DataFrame
 class IParser(ABC):
@@ -257,24 +283,17 @@ class PostgresLoader(ILoader):
 class DataPipeline:
     """Главный пайплайн для обработки данных"""
     
-    def __init__(self, service: SoapServiceFactory, parser: IParser, transformer: ITransformer, loader: ILoader, context: Context):
+    def __init__(self, service: ISoapClient, parser: IParser, transformer: ITransformer, loader: ILoader, context: Context):
         self.parser = parser
         self.transformer = transformer
         self.loader = loader
         self.context = context
-        self.service = service.create(context)
+        self.service = service
 
     def run(self):
         """Запускает процесс обработки данных"""
-        if isinstance(self.service, CurrencyFetcher):
-            print('На фабрике выбран экземпляр CurrencyFetcher')
-            results = self.service.fetch_all()
-        else:
-            print('На фабрике выбран экземпляр NoDateSoapClient')
-            results = self.service.fetch_data()
-
-        # results = self.service.fetch_all() if isinstance(self.service, CurrencyFetcher) else [self.service.fetch_data()]
-        
+        print('Запуск пайплайна')    
+        results = self.service.fetch_all()
         print(results)
         parsed = self.parser.parse(results)
         transformed = self.transformer.transform(parsed)
@@ -283,21 +302,16 @@ class DataPipeline:
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 
-def import_class(dotted_path: str):
-    """Импортирует класс по полному dotted path."""
-    module_path, class_name = dotted_path.rsplit(".", 1)
-    module = importlib.import_module(module_path)
-    return getattr(module, class_name)
-
 #  Запуск с разными реализациями
 if __name__ == "__main__":
-    context = Context(service_name="metals")
+    context = Context(service_name="metals", config_path="./services.json", registry_path="./service_registry.json")
+    factory = ServiceFactory(context)
     pipeline = DataPipeline(
         context=context,
-        service=SoapServiceFactory(),
-        parser=MainParser(context),
-        transformer=NoTransformer(),
-        loader=PostgresLoader(context),
+        soap_client = factory.get_soap_client(),
+        parser = factory.get_parser(),
+        transformer = factory.get_transformer(),
+        loader=factory.get_loader(),
     )
     pipeline.run()
 

@@ -1,3 +1,5 @@
 *.env
 *.csv
 *.xml
+*.pyc
+__pycache__/

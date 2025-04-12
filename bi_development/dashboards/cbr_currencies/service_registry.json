@@ -1,52 +1,50 @@
 {
-    "services": [
-      {
-        "name": "enum_currencies",
-        "soap_client": "yourmodule.clients.NoDateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.NoTransformer"
-      },
-      {
-        "name": "currencies",
-        "soap_client": "yourmodule.clients.CurrenciesSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.NoTransformer"
-      },
-      {
-        "name": "metals",
-        "soap_client": "yourmodule.clients.DateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.NoTransformer"
-      },
-      {
-        "name": "reserves",
-        "soap_client": "yourmodule.clients.DateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.MeltTransformer"
-      },
-      {
-        "name": "bonds",
-        "soap_client": "yourmodule.clients.DateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.MeltTransformer"
-      },
-      {
-        "name": "inflation",
-        "soap_client": "yourmodule.clients.DateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.DateTransformer"
-      },
-      {
-        "name": "avg_key_rate",
-        "soap_client": "yourmodule.clients.DateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.NoTransformer"
-      },
-      {
-        "name": "deposits",
-        "soap_client": "yourmodule.clients.DateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.NoTransformer"
-      }   
-    ]
+  "enum_currencies": {
+    "soap_client": "core.implementations.clients.NoDateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.NoTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "currencies": {
+    "soap_client": "core.implementations.clients.CurrencySoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.NoTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "metals": {
+    "soap_client": "core.implementations.clients.DateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.NoTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "reserves": {
+    "soap_client": "core.implementations.clients.DateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.MeltTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "bonds": {
+    "soap_client": "core.implementations.clients.DateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.MeltTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "inflation": {
+    "soap_client": "core.implementations.clients.DateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.DateTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "avg_key_rate": {
+    "soap_client": "core.implementations.clients.DateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.NoTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "deposits": {
+    "soap_client": "core.implementations.clients.DateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.NoTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  }
 }
