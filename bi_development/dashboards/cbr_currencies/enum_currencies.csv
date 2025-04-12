@@ -20,7 +20,7 @@ R01230;Дирхам ОАЭ;UAE Dirham;1
 R01235;Доллар США;US Dollar;1
 R01239;Евро;Euro;1
 R01240;Египетский фунт;Egyptian Pound;10
-R01270;Индийская рупия;Indian Rupee;10
+R01270;Индийская рупия;Indian Rupee;100
 R01280;Рупия;Rupiah;10000
 R01305;Ирландский фунт;Irish Pound;100
 R01310;Исландская крона;Iceland Krona;10000
@@ -29,7 +29,7 @@ R01325;Итальянская лира;Italian Lira;100000
 R01335;Тенге;Tenge;100
 R01350;Канадский доллар;Canadian Dollar;1
 R01355;Катарский риал;Qatari Rial;1
-R01370;Сом;Som;10
+R01370;Сом;Som;100
 R01375;Юань;Yuan Renminbi;1
 R01390;Кувейтский динар;Kuwaiti Dinar;10
 R01405;Латвийский лат;Latvian Lat;1

@@ -65,7 +65,7 @@ class Cbr():
         return datetime.strptime(f"01.{date_str}", "%d.%m.%Y").strftime("%Y-%m-%d")
 
     def get_request(self):
-        self.get_request_date()
+        self.getprice_request_date()
         client = Client(wsdl=self.wsdl, plugins=[CustomHeaderPlugin(self.soap_action)])                
         response = getattr(client.service, self.method)(**self.query_parametrs)
         return response
