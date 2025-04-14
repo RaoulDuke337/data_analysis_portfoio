@@ -2,9 +2,6 @@
     "services": [
       {
         "name": "enum_currencies",
-        "soap_client": "yourmodule.clients.NoDateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.NoTransformer",
         "method": "EnumValutesXML",
         "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/EnumValutesXML",
@@ -20,9 +17,6 @@
       },
       {
         "name": "currencies",
-        "soap_client": "yourmodule.clients.CurrenciesSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.NoTransformer",
         "method": "GetCursDynamicXML",
         "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/GetCursDynamicXML",
@@ -41,9 +35,6 @@
       },
       {
         "name": "metals",
-        "soap_client": "yourmodule.clients.DateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.NoTransformer",
         "method": "DragMetDynamicXML",
         "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/DragMetDynamicXML",
@@ -60,9 +51,6 @@
       },
       {
         "name": "reserves",
-        "soap_client": "yourmodule.clients.DateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.MeltTransformer",
         "method": "mrrfXML",
         "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/mrrfXML",
@@ -80,9 +68,6 @@
       },
       {
         "name": "bonds",
-        "soap_client": "yourmodule.clients.DateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.MeltTransformer",
         "method": "zcyc_paramsXML",
         "wsdl": "https://www.cbr.ru/secinfo/secinfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/zcyc_paramsXML",
@@ -99,9 +84,6 @@
       },
       {
         "name": "inflation",
-        "soap_client": "yourmodule.clients.DateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.DateTransformer",
         "method": "InflationXML",
         "wsdl": "https://www.cbr.ru/secinfo/secinfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/InflationXML",
@@ -117,9 +99,6 @@
       },
       {
         "name": "avg_key_rate",
-        "soap_client": "yourmodule.clients.DateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.NoTransformer",
         "method": "AvgprocstavXML",
         "wsdl": "https://www.cbr.ru/secinfo/secinfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/AvgprocstavXML",
@@ -135,9 +114,6 @@
       },
       {
         "name": "deposits",
-        "soap_client": "yourmodule.clients.DateSoapClient",
-        "parser": "yourmodule.parsers.MainParser",
-        "transformer": "yourmodule.transformers.NoTransformer",
         "method": "OstatDepoNewXML",
         "wsdl": "https://cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/OstatDepoNewXML",

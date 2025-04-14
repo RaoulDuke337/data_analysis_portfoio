@@ -20,13 +20,13 @@
   "reserves": {
     "soap_client": "core.implementations.clients.DateSoapClient",
     "parser": "core.implementations.parsers.MainParser",
-    "transformer": "core.implementations.transformers.MeltTransformer",
+    "transformer": "core.implementations.transformers.UnpivotTransformer",
     "loader": "core.implementations.loaders.PostgresLoader"
   },
   "bonds": {
     "soap_client": "core.implementations.clients.DateSoapClient",
     "parser": "core.implementations.parsers.MainParser",
-    "transformer": "core.implementations.transformers.MeltTransformer",
+    "transformer": "core.implementations.transformers.UnpivotTransformer",
     "loader": "core.implementations.loaders.PostgresLoader"
   },
   "inflation": {
