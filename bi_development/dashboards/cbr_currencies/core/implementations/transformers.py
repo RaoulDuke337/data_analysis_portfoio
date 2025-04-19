@@ -1,4 +1,5 @@
 import pandas as pd
+from datetime import datetime
 from core.interfaces import ITransformer
 
 class NoTransformer(ITransformer):
@@ -23,6 +24,9 @@ class UnpivotTransformer(ITransformer):
         return df
     
 class DateTransformer(ITransformer):
+    def convert_to_datetime(self, date_str):
+        return datetime.strptime(f"01.{date_str}", "%d.%m.%Y").strftime("%Y-%m-%d")
+
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        df['Date'] = pd.to_datetime(df['Date'], format='%d.%m.%Y')
+        df['date'] = df['date'].apply(self.convert_to_datetime)
         return df

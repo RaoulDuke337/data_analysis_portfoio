@@ -71,6 +71,7 @@
         "method": "zcyc_paramsXML",
         "wsdl": "https://www.cbr.ru/secinfo/secinfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/zcyc_paramsXML",
+        "days_before": 60,
         "parametrs": [
             "OnDate",
             "ToDate"
@@ -87,6 +88,7 @@
         "method": "InflationXML",
         "wsdl": "https://www.cbr.ru/secinfo/secinfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/InflationXML",
+        "days_before": 60,
         "parametrs": [
             "DateFrom",
             "DateTo"
@@ -102,6 +104,7 @@
         "method": "AvgprocstavXML",
         "wsdl": "https://www.cbr.ru/secinfo/secinfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/AvgprocstavXML",
+        "days_before": 60,
         "parametrs": [
             "DateFrom",
             "DateTo"
@@ -117,6 +120,7 @@
         "method": "OstatDepoNewXML",
         "wsdl": "https://cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/OstatDepoNewXML",
+        "days_before": 60,
         "parametrs": [
             "fromDate",
             "ToDate"

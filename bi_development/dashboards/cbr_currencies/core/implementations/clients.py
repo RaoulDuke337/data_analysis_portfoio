@@ -70,7 +70,7 @@ class CurrencyFetcher:
         df = pd.read_csv(self.csv_path, sep=';')
         return df['v_code'].tolist()
 
-    def fetch_all(self):
+    def fetch_data(self):
         """Итерация по валютам и запрос данных."""
         results = []
         for currency in self.currencies:

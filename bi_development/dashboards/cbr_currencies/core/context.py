@@ -1,6 +1,18 @@
 import importlib
 import json
 
+class Services:
+    def __init__(self, config_path):
+        self.services_list = []
+        self.config_path = config_path
+        self.config = None
+
+    def get_services(self):
+        with open(self.config_path) as f:
+            self.config = json.load(f)
+        return [service.get('name') for service in self.config['services']]
+        
+
 class Context:
     """Объект для хранения общих атрибутов между компонентами"""
     def __init__(self, target_service: str, config_path: str, registry_path: str):
@@ -39,4 +51,4 @@ class Context:
         else:
             raise KeyError(f"Компонент {component_name} не найден для сервиса {service_type}")
         return self.registry[service_type][component_name]
-
+    

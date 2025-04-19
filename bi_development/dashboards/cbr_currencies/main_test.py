@@ -3,12 +3,12 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'core'))
 
-from core.context import Context
+from core.context import Context, Services
 from core.interfaces import ISoapClient, IParser, ITransformer, ILoader
 
 
 class ServiceFactory:
-    """Фабрика для переключения сервисов"""
+    """Фабрика для переключения реализаций объектов"""
     def __init__(self, context: Context):
         self.context = context
 
@@ -43,17 +43,21 @@ class DataPipeline:
         transformed = self.transformer.transform(parsed)
         self.loader.load(transformed)
 
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 
 if __name__ == "__main__":
-    context = Context(target_service="reserves", config_path="./services.json", registry_path="./service_registry.json")
-    factory = ServiceFactory(context)
-    pipeline = DataPipeline(
-        context=context,
-        soap_client = factory.get_soap_client(),
-        parser = factory.get_parser(),
-        transformer = factory.get_transformer(),
-        loader=factory.get_loader(),
-    )
-    pipeline.run()
+    services = Services(config_path="./services.json")
+    service_list = services.get_services()
+    for service in service_list:
+        context = Context(target_service=service, config_path="./services.json", registry_path="./service_registry.json")
+        factory = ServiceFactory(context)
+        pipeline = DataPipeline(
+            context=context,
+            soap_client = factory.get_soap_client(),
+            parser = factory.get_parser(),
+            transformer = factory.get_transformer(),
+            loader=factory.get_loader(),
+        )
+        pipeline.run()
