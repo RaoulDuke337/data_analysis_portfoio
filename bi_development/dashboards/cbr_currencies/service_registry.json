@@ -1,0 +1,50 @@
+{
+  "enum_currencies": {
+    "soap_client": "core.implementations.clients.NoDateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.NoTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "currencies": {
+    "soap_client": "core.implementations.clients.CurrencyFetcher",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.NoTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "metals": {
+    "soap_client": "core.implementations.clients.DateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.NoTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "reserves": {
+    "soap_client": "core.implementations.clients.DateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.UnpivotTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "bonds": {
+    "soap_client": "core.implementations.clients.DateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.UnpivotTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "inflation": {
+    "soap_client": "core.implementations.clients.DateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.DateTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "avg_key_rate": {
+    "soap_client": "core.implementations.clients.DateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.NoTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  },
+  "deposits": {
+    "soap_client": "core.implementations.clients.DateSoapClient",
+    "parser": "core.implementations.parsers.MainParser",
+    "transformer": "core.implementations.transformers.NoTransformer",
+    "loader": "core.implementations.loaders.PostgresLoader"
+  }
+}

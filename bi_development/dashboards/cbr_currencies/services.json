@@ -6,44 +6,55 @@
         "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/EnumValutesXML",
         "parametrs": {
-          "Seld": 0
+          "Seld":0
         },
+        "param_values": 0,
         "root_tag": "EnumValutes",
         "tags": ["Vcode", "Vname", "VEngname", "Vnom"],
-        "columns": ["v_code", "v_name", "v_eng_name", "v_nom"]
+        "columns": ["v_code", "v_name", "v_eng_name", "v_nom"],
+        "service_query": "TRUNCATE TABLE currencies",
+        "insert_query": "INSERT INTO currencies (v_code, v_name, v_eng_name, v_nom) VALUES"
       },
       {
         "name": "currencies",
         "method": "GetCursDynamicXML",
         "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/GetCursDynamicXML",
+        "days_before": 10,
         "parametrs": [
           "FromDate",
           "ToDate",
           "ValutaCode"
         ],
+        "csv_source": "enum_currencies.csv",
         "root_tag": "ValuteCursDynamic",
-        "tags": ["CursDate", "Vcurs", "Vnom"],
-        "columns": ["date", "value", "unit", "name", "v_code"]
+        "tags": ["CursDate", "Vcurs", "Vnom", "Vcode"],
+        "columns": ["date", "value", "unit", "v_code"],
+        "service_query": "TRUNCATE TABLE currencies_stage",
+        "insert_query": "INSERT INTO currencies_stage (date, value, unit, v_code) VALUES"
       },
       {
         "name": "metals",
         "method": "DragMetDynamicXML",
         "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/DragMetDynamicXML",
+        "days_before": 30,
         "parametrs": [
             "fromDate",
             "ToDate"
           ],
         "root_tag": "DrgMet",
         "tags": ["DateMet", "CodMet", "price"],
-        "columns": ["date", "code_met", "price"]
+        "columns": ["date", "code_met", "price"],
+        "service_query": "TRUNCATE TABLE metals_stage",
+        "insert_query": "INSERT INTO metals_stage (date, code_met, price) VALUES"
       },
       {
         "name": "reserves",
         "method": "mrrfXML",
         "wsdl": "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/mrrfXML",
+        "days_before": 60,
         "parametrs": [
             "fromDate",
             "ToDate"
@@ -51,13 +62,16 @@
         "root_tag": "mr",
         "tags": ["D0", "p1", "p2", "p3", "p4", "p5", "p6"],
         "columns": ["date", "all_reserves", "currency", "foregin_currency", "sdr", "mvf", "gold"],
-        "alt_columns": ["measure", "value"]
+        "alt_columns": ["measure", "value"],
+        "service_query": "TRUNCATE TABLE reserves_stage",
+        "insert_query": "INSERT INTO reserves_stage (date, measure, value) VALUES"
       },
       {
         "name": "bonds",
         "method": "zcyc_paramsXML",
         "wsdl": "https://www.cbr.ru/secinfo/secinfo.asmx?WSDL",
         "soap_action": "http://web.cbr.ru/zcyc_paramsXML",
+        "days_before": 60,
         "parametrs": [
             "OnDate",
             "ToDate"
@@ -65,7 +79,57 @@
         "root_tag": "ZCYC",
         "tags": ["D0", "v_0_5", "v_1_0", "v_2_0", "v_5_0", "v_10_0", "v_15_0", "v_30_0"],
         "columns": ["date", "half_year", "year", "two_years", "five_years", "ten_years", "fifteen_years", "thirty_years"],
-        "alt_columns": ["measure", "value"]
-      }
+        "alt_columns": ["measure", "value"],
+        "service_query": "TRUNCATE TABLE gov_bonds_stage",
+        "insert_query": "INSERT INTO gov_bonds_stage (date, measure, value) VALUES"
+      },
+      {
+        "name": "inflation",
+        "method": "InflationXML",
+        "wsdl": "https://www.cbr.ru/secinfo/secinfo.asmx?WSDL",
+        "soap_action": "http://web.cbr.ru/InflationXML",
+        "days_before": 60,
+        "parametrs": [
+            "DateFrom",
+            "DateTo"
+          ],
+        "root_tag": "RI",
+        "tags": ["DTS", "KeyRate", "infVal", "AimVal"],
+        "columns": ["date", "key_rate", "inf_fact", "inf_goal"],
+        "service_query": "TRUNCATE TABLE inflation_stage",
+        "insert_query": "INSERT INTO inflation_stage (date, key_rate, inf_fact, inf_goal) VALUES"
+      },
+      {
+        "name": "avg_key_rate",
+        "method": "AvgprocstavXML",
+        "wsdl": "https://www.cbr.ru/secinfo/secinfo.asmx?WSDL",
+        "soap_action": "http://web.cbr.ru/AvgprocstavXML",
+        "days_before": 60,
+        "parametrs": [
+            "DateFrom",
+            "DateTo"
+          ],
+        "root_tag": "AP",
+        "tags": ["D0", "Val"],
+        "columns": ["date", "fact"],
+        "service_query": "TRUNCATE TABLE av_key_rate_stage",
+        "insert_query": "INSERT INTO av_key_rate_stage (date, fact) VALUES"
+      },
+      {
+        "name": "deposits",
+        "method": "OstatDepoNewXML",
+        "wsdl": "https://cbr.ru/DailyInfoWebServ/DailyInfo.asmx?WSDL",
+        "soap_action": "http://web.cbr.ru/OstatDepoNewXML",
+        "days_before": 60,
+        "parametrs": [
+            "fromDate",
+            "ToDate"
+          ],
+        "root_tag": "odn",
+        "tags": ["DT", "TOTAL", "AUC_1W", "OV_P"],
+        "columns": ["date", "total", "one_week", "overnight"],
+        "service_query": "TRUNCATE TABLE deposits_stage",
+        "insert_query": "INSERT INTO deposits_stage (date, total, one_week, overnight) VALUES"
+      }   
     ]
 }
