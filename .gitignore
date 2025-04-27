@@ -3,4 +3,14 @@
 *.xml
 *.pyc
 __pycache__/
+*/__pycache__/
 *test*
+logs/
+postgres-data/
+redis-data/
+*.pid
+.vscode/
+.idea/
+*.swp
+*.bak
+*.tmp
