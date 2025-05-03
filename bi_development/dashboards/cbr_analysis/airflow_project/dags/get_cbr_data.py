@@ -2,12 +2,8 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
 import pickle
-import sys
-import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-
-from dashboards.cbr_currencies.factory import get_data_pipeline  # Фабрика эээ, возвращающая pipeline по имени сервиса
+from cbr_currencies.factory import get_data_pipeline  # Фабрика эээ обнова !, возвращающая pipeline по имени сервиса
 
 
 
