@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from context import Context
+from cbr_currencies.core.context import Context
 import pandas as pd
 
 class ILoader(ABC):

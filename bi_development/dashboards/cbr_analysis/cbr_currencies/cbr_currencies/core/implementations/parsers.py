@@ -1,4 +1,4 @@
-from core.interfaces import IParser
+from cbr_currencies.core.interfaces import IParser
 import pandas as pd
 
 class MainParser(IParser):

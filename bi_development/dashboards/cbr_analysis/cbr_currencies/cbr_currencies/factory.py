@@ -1,10 +1,6 @@
-import sys
 import os
-
-sys.path.append(os.path.join(os.path.dirname(__file__), 'core'))
-
-from core.context import Context
-from core.interfaces import ISoapClient, IParser, ITransformer, ILoader
+from cbr_currencies.core.context import Context
+from cbr_currencies.core.interfaces import ISoapClient, IParser, ITransformer, ILoader
 
 
 class ServiceFactory:

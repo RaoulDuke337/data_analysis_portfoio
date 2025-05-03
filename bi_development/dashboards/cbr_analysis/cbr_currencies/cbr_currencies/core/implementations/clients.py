@@ -1,6 +1,6 @@
 from zeep import Client, Plugin
 import pandas as pd
-from core.interfaces import ISoapClient, IDateSoapClient
+from cbr_currencies.core.interfaces import ISoapClient, IDateSoapClient
 
 class CustomHeaderPlugin(Plugin):
     def __init__(self, soap_action):

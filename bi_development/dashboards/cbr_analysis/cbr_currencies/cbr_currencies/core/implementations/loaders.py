@@ -1,4 +1,4 @@
-from core.interfaces import ILoader
+from cbr_currencies.core.interfaces import ILoader
 from decouple import config
 import psycopg2
 import pandas as pd

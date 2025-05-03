@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import datetime
-from core.interfaces import ITransformer
+from cbr_currencies.core.interfaces import ITransformer
 
 class NoTransformer(ITransformer):
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
