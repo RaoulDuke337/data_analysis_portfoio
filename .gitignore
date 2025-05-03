@@ -14,3 +14,4 @@ redis-data/
 *.swp
 *.bak
 *.tmp
+*.DS_Store
