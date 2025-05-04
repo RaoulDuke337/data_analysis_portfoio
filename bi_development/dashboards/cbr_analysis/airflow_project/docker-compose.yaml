@@ -53,6 +53,7 @@ x-airflow-common:
   build: 
     context: ../      # поднимаемся из airflow_project/ в cbr_analysis/
     dockerfile: airflow_project/Dockerfile
+  image: custom_airflow:2.9.1
   environment:
     &airflow-common-env
     PYTHONPATH: /opt/cbr_currencies
