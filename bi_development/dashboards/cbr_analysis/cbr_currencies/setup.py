@@ -11,7 +11,7 @@ setup(
     install_requires=[
         'pandas>=2.0',
         'numpy>=1.24',
-        'decouple',
+        'python-decouple',
         'zeep==4.3.1',
         'psycopg2-binary==2.9.10'
     ],

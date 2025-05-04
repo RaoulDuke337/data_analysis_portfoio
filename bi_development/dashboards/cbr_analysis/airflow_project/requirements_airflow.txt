@@ -1,4 +1,4 @@
-decouple
+python-decouple
 pandas
 psycopg2-binary
 zeep
