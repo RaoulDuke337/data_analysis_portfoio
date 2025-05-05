@@ -1,0 +1,50 @@
+{
+  "enum_currencies": {
+    "soap_client": "cbr_currencies.core.implementations.clients.NoDateSoapClient",
+    "parser": "cbr_currencies.core.implementations.parsers.MainParser",
+    "transformer": "cbr_currencies.core.implementations.transformers.NoTransformer",
+    "loader": "cbr_currencies.core.implementations.loaders.PostgresLoader"
+  },
+  "currencies": {
+    "soap_client": "cbr_currencies.core.implementations.clients.CurrencyFetcher",
+    "parser": "cbr_currencies.core.implementations.parsers.MainParser",
+    "transformer": "cbr_currencies.core.implementations.transformers.NoTransformer",
+    "loader": "cbr_currencies.core.implementations.loaders.PostgresLoader"
+  },
+  "metals": {
+    "soap_client": "cbr_currencies.core.implementations.clients.DateSoapClient",
+    "parser": "cbr_currencies.core.implementations.parsers.MainParser",
+    "transformer": "cbr_currencies.core.implementations.transformers.NoTransformer",
+    "loader": "cbr_currencies.core.implementations.loaders.PostgresLoader"
+  },
+  "reserves": {
+    "soap_client": "cbr_currencies.core.implementations.clients.DateSoapClient",
+    "parser": "cbr_currencies.core.implementations.parsers.MainParser",
+    "transformer": "cbr_currencies.core.implementations.transformers.UnpivotTransformer",
+    "loader": "cbr_currencies.core.implementations.loaders.PostgresLoader"
+  },
+  "bonds": {
+    "soap_client": "cbr_currencies.core.implementations.clients.DateSoapClient",
+    "parser": "cbr_currencies.core.implementations.parsers.MainParser",
+    "transformer": "cbr_currencies.core.implementations.transformers.UnpivotTransformer",
+    "loader": "cbr_currencies.core.implementations.loaders.PostgresLoader"
+  },
+  "inflation": {
+    "soap_client": "cbr_currencies.core.implementations.clients.DateSoapClient",
+    "parser": "cbr_currencies.core.implementations.parsers.MainParser",
+    "transformer": "cbr_currencies.core.implementations.transformers.DateTransformer",
+    "loader": "cbr_currencies.core.implementations.loaders.PostgresLoader"
+  },
+  "avg_key_rate": {
+    "soap_client": "cbr_currencies.core.implementations.clients.DateSoapClient",
+    "parser": "cbr_currencies.core.implementations.parsers.MainParser",
+    "transformer": "cbr_currencies.core.implementations.transformers.NoTransformer",
+    "loader": "cbr_currencies.core.implementations.loaders.PostgresLoader"
+  },
+  "deposits": {
+    "soap_client": "cbr_currencies.core.implementations.clients.DateSoapClient",
+    "parser": "cbr_currencies.core.implementations.parsers.MainParser",
+    "transformer": "cbr_currencies.core.implementations.transformers.NoTransformer",
+    "loader": "cbr_currencies.core.implementations.loaders.PostgresLoader"
+  }
+}
