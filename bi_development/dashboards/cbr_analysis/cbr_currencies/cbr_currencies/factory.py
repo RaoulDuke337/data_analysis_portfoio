@@ -33,9 +33,7 @@ class DataPipeline:
 
 def get_data_pipeline(service_name: str) -> DataPipeline:
     """Создает экземпляр DataPipeline для указанного сервиса"""
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(script_dir)
-    context = Context(target_service=service_name, config_path="./services.json", registry_path="./service_registry.json")
+    context = Context(target_service=service_name, config_path="/opt/airflow/config/services.json", registry_path="/opt/airflow/config/service_registry.json")
     factory = ServiceFactory(context)
     return DataPipeline(
         context=context,
