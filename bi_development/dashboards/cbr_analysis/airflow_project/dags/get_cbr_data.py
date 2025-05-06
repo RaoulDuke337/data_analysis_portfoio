@@ -1,19 +1,23 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
-import pickle
+from lxml import etree
+import pandas as pd
 
 from cbr_currencies.factory import get_data_pipeline  # Фабрика эээ обнова !, возвращающая pipeline по имени сервиса
 
 
 
 def push_dataframe_to_xcom(ti, key, dataframe):
-    """Функция для сериализации DataFrame и передачи через XCom"""
-    ti.xcom_push(key=key, value=pickle.dumps(dataframe))
+    """Сериализует DataFrame в JSON-строку и пушит в XCom"""
+    json_data = dataframe.to_json(orient='split')
+    ti.xcom_push(key=key, value=json_data)
 
-def pull_dataframe_from_xcom(ti, key):
-    """Функция для извлечения DataFrame из XCom"""
-    return pickle.loads(ti.xcom_pull(key=key))
+def pull_dataframe_from_xcom(ti, task_id, key):
+    """Пуллит JSON-строку из XCom и превращает обратно в DataFrame"""
+    json_data = ti.xcom_pull(task_ids=task_id, key=key)
+    dataframe = pd.read_json(json_data, orient='split')
+    return dataframe
 
 
 default_args = {
@@ -32,28 +36,42 @@ with DAG(
     # Создаем pipeline для каждого сервиса один раз
     pipelines = {
         service: get_data_pipeline(service)
-        for service in ["currencies", "metals"]
+        for service in ["metals", "currencies"]
     }
 
     def run_fetch(**kwargs):
         soap_client = kwargs["soap_client"]
-        kwargs['ti'].xcom_push(key="fetched_data", value=soap_client.fetch_data())
+        fetched_data = soap_client.fetch_data()
+        # Сериализуем данные и передаем их через XCom
+        xml_strings = [etree.tostring(elem).decode('utf-8') for elem in fetched_data]
+        kwargs['ti'].xcom_push(key="fetched_data", value=xml_strings)
 
     def run_parse(**kwargs):
         parser = kwargs["parser"]
-        xml_data = kwargs['ti'].xcom_pull(key="fetched_data")
-        parsed_data = parser.parse(xml_data)
+        print('забираем данные из XCom')
+        xml_strings = kwargs['ti'].xcom_pull(task_ids=f"{service}_fetch", key='fetched_data')
+        print('данные из XCom получены')
+        # Из строк обратно переводим в элементы XML для корректной работы парсера
+        print('переводим строки обратно в элементы XML')
+        xml_elements = [etree.fromstring(s) for s in xml_strings]
+        print('строки переведены обратно в элементы XML')
+        print('начало парсинга')
+        parsed_data = parser.parse(xml_elements)
+        print('парсинг завершен')
+         # Сериализуем с помозью pickle и передаем через XCom
+        print('пушим DataFrame в XCom')
         push_dataframe_to_xcom(kwargs['ti'], "parsed_data", parsed_data)
+        print('Успешно')
 
     def run_transform(**kwargs):
         transformer = kwargs["transformer"]
-        parsed_data = pull_dataframe_from_xcom(kwargs['ti'], "parsed_data")
+        parsed_data = pull_dataframe_from_xcom(kwargs['ti'], task_id=f"{service}_parse", key="parsed_data")
         transformed_data = transformer.transform(parsed_data)
         push_dataframe_to_xcom(kwargs['ti'], "transformed_data", transformed_data)
 
     def run_load(**kwargs):
         loader = kwargs["loader"]
-        data = pull_dataframe_from_xcom(kwargs['ti'], "transformed_data")
+        data = pull_dataframe_from_xcom(kwargs['ti'], task_id=f"{service}_transform", key="transformed_data")
         loader.load(data)
 
     for service, pipeline in pipelines.items():
