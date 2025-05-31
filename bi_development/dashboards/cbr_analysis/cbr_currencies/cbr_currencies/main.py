@@ -33,13 +33,13 @@ class DataPipeline:
 
     def run(self):
         """Запускает процесс обработки данных"""
-        print('Запуск пайплайна')    
+        print(f'Запуск пайплайна {context.target_service}')    
         results = self.soap_client.fetch_data()
-        print('Данные получены')
+        print(f'Данные получены для {context.target_service}')
         parsed = self.parser.parse(results)
-        print('Парсинг завершен')
+        print(f'Парсинг завершен для {context.target_service}')
         transformed = self.transformer.transform(parsed)
-        print('Трансформация завершена')
+        print(f'Трансформация завершена для {context.target_service}')
         self.loader.load(transformed)
 
 
