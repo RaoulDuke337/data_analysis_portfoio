@@ -24,9 +24,11 @@ class UnpivotTransformer(ITransformer):
         return df
     
 class DateTransformer(ITransformer):
-    def convert_to_datetime(self, date_str):
+    def convert_to_datetime(self, date_str: str):
         return datetime.strptime(f"01.{date_str}", "%d.%m.%Y").strftime("%Y-%m-%d")
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        df['date'] = df['date'].apply(self.convert_to_datetime)
+        print(f"[DEBUG] Типы данных перед трансформацией:\n{df.dtypes}")
+        print(f"[DEBUG] Примеры значений:\n{df['date'].head()}")
+        df['date'] = df['date'].astype(str).apply(self.convert_to_datetime)
         return df
